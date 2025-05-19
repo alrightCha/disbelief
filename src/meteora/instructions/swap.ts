@@ -41,8 +41,6 @@ export const getSwapIx = async (
   
   while(virtualPoolState == null){
     const receivedState = await client.state.getPool(pool);
-    console.log("Migration progress: ", receivedState.migrationProgress); 
-    console.log("POOL SOL: ", receivedState.baseReserve); 
     if(receivedState != null){
       virtualPoolState = receivedState; 
     }else{
