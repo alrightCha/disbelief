@@ -5,7 +5,7 @@ import {
   SystemProgram,
   Transaction,
 } from "@solana/web3.js";
-import { BLOCK_ENGINE_URL, JITO_ENDPOINT, RPC_URL } from "../state";
+import { BLOCK_ENGINE_URL, JITO_ENDPOINT, JITO_TIP, RPC_URL } from "../state";
 import { searcherClient } from "../jito/sdk/block-engine/searcher";
 import { buildVersionedTx } from "../solana/utils";
 
@@ -16,7 +16,7 @@ export const snipe = async (signer: Keypair, transaction: Transaction) => {
   const c = searcherClient(blockEngineUrl);
 
   const tip = await c.getTipAccounts();
-  
+
   if (tip.ok) {
     const account = tip.value[0];
     const tipAccount = new PublicKey(account);
@@ -24,7 +24,7 @@ export const snipe = async (signer: Keypair, transaction: Transaction) => {
     const tipIx = SystemProgram.transfer({
       fromPubkey: signer.publicKey,
       toPubkey: tipAccount,
-      lamports: 300_000,
+      lamports: JITO_TIP,
     });
 
     transaction.add(tipIx);

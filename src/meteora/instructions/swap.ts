@@ -1,7 +1,7 @@
 import { DynamicBondingCurveClient } from "@meteora-ag/dynamic-bonding-curve-sdk";
 
-import { Connection, Keypair, PublicKey, Transaction } from "@solana/web3.js";
-import { RPC_URL } from "../../state";
+import { ComputeBudgetProgram, Connection, Keypair, PublicKey, Transaction } from "@solana/web3.js";
+import { FEE, RPC_URL } from "../../state";
 import { BN } from "@coral-xyz/anchor";
 
 import {
@@ -27,6 +27,13 @@ export const getSwapIx = async (
   console.log("In amount: ", inAmount); 
 
   const tx = new Transaction();
+
+  tx.add(
+    ComputeBudgetProgram.setComputeUnitPrice({
+      microLamports: FEE,      // tip; make it higher if the network is busy
+    })
+  );
+
   const mintPubkey = new PublicKey(mintAddress);
   const pool = new PublicKey(poolAddress);
   console.log("POOL: ", pool); 

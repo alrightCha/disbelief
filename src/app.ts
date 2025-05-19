@@ -1,6 +1,6 @@
 import { snipe } from "./jito/snipe";
 
-import { BELIEVE_DEPLOYER, WSS_RPC, RPC_URL, MIN_SCORE, DEFAULT_BUY } from "./state";
+import { BELIEVE_DEPLOYER, WSS_RPC, RPC_URL, MIN_SCORE, DEFAULT_BUY, SLIPPAGE } from "./state";
 import {
   Connection,
   LAMPORTS_PER_SOL,
@@ -21,9 +21,6 @@ const admin = Keypair.fromSecretKey(
   bs58.decode(process.env.ADMIN_SECRET || "")
 );
 
-const limit = 0.1;
-let reached = 0;
-
 const onLogs: LogsCallback = async (logInfo, ctx) => {
   // quick pre-filter: only handle txs that contain the wanted instruction name
 
@@ -31,10 +28,6 @@ const onLogs: LogsCallback = async (logInfo, ctx) => {
     l.includes("InitializeVirtualPoolWithSplToken")
   );
   if (!wanted) return; // ignore the rest
-
-  if (reached >= limit) {
-    return;
-  }
 
   console.log("👻  New token created with TX Signature:", logInfo.signature);
 
@@ -65,12 +58,11 @@ const onLogs: LogsCallback = async (logInfo, ctx) => {
           false,
           mintInfo.mint,
           mintInfo.pool,
-          500
+          SLIPPAGE
         );
 
         if (buyTx) {
           const signature = await snipe(admin, buyTx);
-          reached += 0.005;
           console.log("SIGNATURE RESULT: ", signature);
         }
       }
