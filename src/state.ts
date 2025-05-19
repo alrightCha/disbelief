@@ -7,3 +7,4 @@ export const BUNDLE_LIMIT = 5;
 export const BELIEVE_DEPLOYER = new PublicKey("5qWya6UjwWnGVhdSBL3hyZ7B45jbk6Byt1hwd7ohEGXE"); 
 export const METEORA_DBC = new PublicKey("dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN"); 
 export const JITO_ENDPOINT = "https://mainnet.block-engine.jito.wtf/api/v1/transactions"; 
+export const MIN_SCORE = 90

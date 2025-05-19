@@ -1,6 +1,6 @@
 import { snipe } from "./jito/snipe";
 
-import { BELIEVE_DEPLOYER, WSS_RPC, RPC_URL } from "./state";
+import { BELIEVE_DEPLOYER, WSS_RPC, RPC_URL, MIN_SCORE } from "./state";
 import {
   Connection,
   LAMPORTS_PER_SOL,
@@ -58,7 +58,7 @@ const onLogs: LogsCallback = async (logInfo, ctx) => {
 
       console.log("TWEET SCOUT SCORE: ", scoutScore);
 
-      if (scoutScore > 100) {
+      if (scoutScore > MIN_SCORE) {
         const buyTx = await getSwapIx(
           admin,
           0.5 * LAMPORTS_PER_SOL,
