@@ -5,12 +5,14 @@ export const RPC_URL = "https://mainnet.helius-rpc.com/?api-key=16c20cdf-1c1b-44
 export const BLOCK_ENGINE_URL = "mainnet.block-engine.jito.wtf"; 
 export const BUNDLE_LIMIT = 5; 
 export const BELIEVE_DEPLOYER = new PublicKey("5qWya6UjwWnGVhdSBL3hyZ7B45jbk6Byt1hwd7ohEGXE"); 
+export const METAPLEX_PUBKEY = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"); 
 export const METEORA_DBC = new PublicKey("dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN"); 
 export const JITO_ENDPOINT = "https://mainnet.block-engine.jito.wtf/api/v1/transactions"; 
+export const PINATA_GATEWAY = "gray-real-deer-511.mypinata.cloud";
 
 //BUY CONFIG
 export const MIN_SCORE = 80
-export const DEFAULT_BUY = 1; 
+export const DEFAULT_BUY = 0.1; 
 export const SLIPPAGE = 1000;
 export const JITO_TIP = 800_000;  
 export const FEE = 100_000; 

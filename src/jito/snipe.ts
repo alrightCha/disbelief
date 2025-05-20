@@ -11,7 +11,7 @@ import { buildVersionedTx } from "../solana/utils";
 
 export const snipe = async (signer: Keypair, transaction: Transaction) => {
   const blockEngineUrl = BLOCK_ENGINE_URL;
-  const connection = new Connection(RPC_URL, "confirmed");
+  const connection = new Connection(RPC_URL, "processed");
 
   const c = searcherClient(blockEngineUrl);
 

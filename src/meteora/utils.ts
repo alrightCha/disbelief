@@ -9,8 +9,8 @@ export const getPoolForMint = async (
   mint: String
 ): Promise<PublicKey | null> => {
   try {
-    const connection = new Connection(RPC_URL, "finalized");
-    const client = new DynamicBondingCurveClient(connection, "finalized");
+    const connection = new Connection(RPC_URL, "processed");
+    const client = new DynamicBondingCurveClient(connection, "processed");
     const pools = await client.state.getPools();
 
     while (true) {

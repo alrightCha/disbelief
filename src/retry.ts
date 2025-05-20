@@ -3,7 +3,7 @@ const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
 export async function retry<T>(
   fn: () => Promise<T>,
-  maxAttempts = 5,
+  maxAttempts = 8,
   waitMs = 500
 ): Promise<T> {
   let lastErr: unknown;

@@ -27,7 +27,7 @@ export async function getTweetScoutScore(userId: string): Promise<number> {
   if (!res.ok) {
     // 4xx / 5xx → turn it into a JavaScript error
     const text = await res.text().catch(() => "");
-    console.log("Error: ", res.body); 
+    console.log("Error: ", res.body);
     throw new Error(
       `TweetScout error ${res.status}: ${res.statusText}\n${text}`
     );
@@ -35,7 +35,10 @@ export async function getTweetScoutScore(userId: string): Promise<number> {
 
   const ipfsMs = performance.now() - ipfsStart;
   console.log(`TWITTER SCOUT RESPONSE TIME   : ${ipfsMs.toFixed(2)} ms`);
-  const result = await res.json();
 
-  return result.score;
+  const result = await res.json();
+  const score = result.score;
+  console.log("TWEETSCOUT SCORE: ", score);
+
+  return score;
 }

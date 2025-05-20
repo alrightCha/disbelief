@@ -1,6 +1,12 @@
 import { DynamicBondingCurveClient } from "@meteora-ag/dynamic-bonding-curve-sdk";
 
-import { ComputeBudgetProgram, Connection, Keypair, PublicKey, Transaction } from "@solana/web3.js";
+import {
+  ComputeBudgetProgram,
+  Connection,
+  Keypair,
+  PublicKey,
+  Transaction,
+} from "@solana/web3.js";
 import { FEE, RPC_URL } from "../../state";
 import { BN } from "@coral-xyz/anchor";
 
@@ -20,38 +26,41 @@ export const getSwapIx = async (
   poolAddress: string,
   slippageBps: number | undefined
 ) => {
-  const connection = new Connection(RPC_URL, "finalized");
-  const client = new DynamicBondingCurveClient(connection, "finalized");
+  const connection = new Connection(RPC_URL, "processed");
+  const client = new DynamicBondingCurveClient(connection, "processed");
 
   const inAmount = new BN(amountIn);
-  console.log("In amount: ", inAmount); 
+  console.log("In amount: ", inAmount);
 
   const tx = new Transaction();
 
   tx.add(
     ComputeBudgetProgram.setComputeUnitPrice({
-      microLamports: FEE,      // tip; make it higher if the network is busy
+      microLamports: FEE, // tip; make it higher if the network is busy
     })
   );
 
   const mintPubkey = new PublicKey(mintAddress);
   const pool = new PublicKey(poolAddress);
-  console.log("POOL: ", pool); 
-  let virtualPoolState = null; 
-  
-  while(virtualPoolState == null){
+  console.log("POOL: ", pool);
+  let virtualPoolState = null;
+
+  const ipfsStart = performance.now();
+  while (virtualPoolState == null) {
     const receivedState = await client.state.getPool(pool);
-    if(receivedState != null){
-      virtualPoolState = receivedState; 
-      console.log("Migration progress: ", receivedState.migrationProgress); 
-      console.log("POOL SOL: ", receivedState.baseReserve); 
-    }else{
-      sleep(1000); 
+    if (receivedState != null) {
+      virtualPoolState = receivedState;
+      console.log("Migration progress: ", receivedState.migrationProgress);
+      console.log("POOL SOL: ", receivedState.baseReserve);
+    } else {
+      sleep(1000);
     }
   }
 
-  const poolConfigState = await client.state.getPoolConfig(virtualPoolState.config); 
-  const currentBlockTimestamp = await connection.getSlot(); 
+  const poolConfigState = await client.state.getPoolConfig(
+    virtualPoolState.config
+  );
+  const currentBlockTimestamp = await connection.getSlot();
 
   /**
    * Calculate the amount out for a swap (quote)
@@ -64,16 +73,20 @@ export const getSwapIx = async (
    * @param currentPoint - The current point
    * @returns The swap quote result
    **/
-  
+
   const swapQuote = await client.pool.swapQuote({
-    virtualPool: virtualPoolState, 
-    config: poolConfigState, 
-    swapBaseForQuote: directionBuy, 
-    amountIn: inAmount, 
-    slippageBps: slippageBps, 
-    hasReferral: false, 
-    currentPoint: new BN(currentBlockTimestamp)
+    virtualPool: virtualPoolState,
+    config: poolConfigState,
+    swapBaseForQuote: directionBuy,
+    amountIn: inAmount,
+    slippageBps: slippageBps,
+    hasReferral: false,
+    currentPoint: new BN(currentBlockTimestamp),
   });
+
+  const totalMs = performance.now() - ipfsStart;
+
+  console.log("TOTAL to find config from meteora: ", totalMs.toFixed(2));
 
   const ata = await getAssociatedTokenAddress(
     mintPubkey,
@@ -83,16 +96,18 @@ export const getSwapIx = async (
     ASSOCIATED_TOKEN_PROGRAM_ID
   );
 
-  const createATAIx = createAssociatedTokenAccountInstruction(
-    buyer.publicKey,
-    ata,
-    buyer.publicKey,
-    mintPubkey,
-    TOKEN_PROGRAM_ID,
-    ASSOCIATED_TOKEN_PROGRAM_ID
-  );
+  if (!directionBuy) {
+    const createATAIx = createAssociatedTokenAccountInstruction(
+      buyer.publicKey,
+      ata,
+      buyer.publicKey,
+      mintPubkey,
+      TOKEN_PROGRAM_ID,
+      ASSOCIATED_TOKEN_PROGRAM_ID
+    );
 
-  tx.add(createATAIx);
+    tx.add(createATAIx);
+  }
 
   const swapIx = await client.pool.swap({
     owner: buyer.publicKey,
