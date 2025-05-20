@@ -92,7 +92,7 @@ const onLogs: LogsCallback = async (logInfo, ctx) => {
           setTimeout(async () => {
             console.log("BEGINNING SELL TX");
             const ata = getAssociatedTokenAddressSync(
-              new PublicKey(mintInfo.mint),
+              mintInfo.mint,
               admin.publicKey,
               false,
               TOKEN_PROGRAM_ID
@@ -113,8 +113,8 @@ const onLogs: LogsCallback = async (logInfo, ctx) => {
             const signature = await snipe(admin, sellTx);
           }, 15000);
         }
-      }else{
-        console.log("Score low. Skipping...")
+      } else {
+        console.log("Score low. Skipping...");
       }
     } catch (err) {
       console.log(err);
