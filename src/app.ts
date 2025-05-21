@@ -128,7 +128,10 @@ const onLogs: LogsCallback = async (logInfo, ctx) => {
           const sellAfter = getSellTimeout(score);
           console.log(`Selling after ${sellAfter} ms`);
 
-          //Sell after 15 seconds
+          //Sell after 15 seconds if score is below 400. If not, sell manually by checking X profile
+          if(score > 400){
+            return; 
+          }
           setTimeout(async () => {
             console.log("BEGINNING SELL TX");
             const ata = getAssociatedTokenAddressSync(
