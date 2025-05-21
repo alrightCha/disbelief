@@ -144,11 +144,13 @@ const onLogs: LogsCallback = async (logInfo, ctx) => {
                 const rawBalance = await connection.getTokenAccountBalance(ata);
                 balance = parseInt(rawBalance.value.amount);
               } catch (err) {
+                console.log("error finding balance for ata: ", err)
                 sleep(100); 
               }
               if (balance > 0) {
                 break;
               } else {
+                console.log("Balance still at 0.")
                 sleep(100);
               }
             }
