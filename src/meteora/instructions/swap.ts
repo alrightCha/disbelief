@@ -103,9 +103,6 @@ export const getSwapIx = async (
     currentPoint: new BN(currentBlockTimestamp),
   });
 
-  console.log("SWAP PRICE: ", swapQuote.price.beforeSwap.toNumber());
-  console.log("NEXT SWAP PRICE: ", swapQuote.nextSqrtPrice.toNumber());
-
   const totalMs = performance.now() - ipfsStart;
 
   console.log("TOTAL to find config from meteora: ", totalMs.toFixed(2));

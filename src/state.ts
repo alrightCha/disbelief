@@ -12,7 +12,7 @@ export const PINATA_GATEWAY = "gray-real-deer-511.mypinata.cloud";
 
 //BUY CONFIG
 export const MIN_SCORE = 80
-export const DEFAULT_BUY = 0.1; 
+export const DEFAULT_BUY = 0.5; 
 export const SLIPPAGE = 1000;
 export const JITO_TIP = 800_000;  
 export const FEE = 100_000; 
