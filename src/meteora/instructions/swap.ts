@@ -4,10 +4,11 @@ import {
   ComputeBudgetProgram,
   Connection,
   Keypair,
+  LAMPORTS_PER_SOL,
   PublicKey,
   Transaction,
 } from "@solana/web3.js";
-import { FEE, MIN_SLOT_DIFF, RPC_URL } from "../../state";
+import { BASE_VAULT_CAP, FEE, MIN_SLOT_DIFF, RPC_URL } from "../../state";
 import { BN } from "@coral-xyz/anchor";
 
 import {
@@ -62,15 +63,25 @@ export const getSwapIx = async (
   console.log("POOL: ", pool);
   let virtualPoolState = null;
 
+  //Avoid being the first to buy and getting demolished
+  let canBuy = false;
+
   const ipfsStart = performance.now();
-  while (virtualPoolState == null) {
+  while (virtualPoolState == null || !canBuy) {
     const receivedState = await client.state.getPool(pool);
     if (receivedState != null) {
       virtualPoolState = receivedState;
-      console.log("Migration progress: ", receivedState.migrationProgress);
-      console.log("POOL SOL: ", receivedState.baseReserve);
+      if (!directionBuy) {
+        console.log("Migration progress: ", receivedState.migrationProgress);
+        console.log("POOL SOL: ", receivedState.baseReserve.toNumber());
+        const pooledTokens = receivedState.baseReserve;
+        const amountInVault = parseInt(pooledTokens) / LAMPORTS_PER_SOL;
+        if (amountInVault < BASE_VAULT_CAP) {
+          canBuy = true;
+        }
+      }
     } else {
-      sleep(1000);
+      sleep(500);
     }
   }
 

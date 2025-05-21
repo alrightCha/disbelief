@@ -57,6 +57,15 @@ const onLogs: LogsCallback = async (logInfo, ctx) => {
 
     console.log("Found following mint info from Signature: ", mintInfo);
     if (mintInfo) {
+      const name = mintInfo.name;
+      const symbol = mintInfo.symbol;
+      if (
+        name.trim().toLowerCase() == "test" ||
+        symbol.trim().toLowerCase() == "test"
+      ) {
+        console.log("Breaking early. This is a test token.");
+        return;
+      }
       console.log("Fetching metadata for mint: ", mintInfo.mint);
       const startTweetPerformance = performance.now();
       const tweetMetadata = await getTweetMetadataFromIpfs(mintInfo.uri);
@@ -91,8 +100,8 @@ const onLogs: LogsCallback = async (logInfo, ctx) => {
           const signature = await snipe(admin, buyTx);
           console.log("SIGNATURE RESULT: ", signature);
 
-          const sellAfter = getSellTimeout(score); 
-          console.log(`Selling after ${sellAfter} ms`); 
+          const sellAfter = getSellTimeout(score);
+          console.log(`Selling after ${sellAfter} ms`);
           //Sell after 15 seconds
           setTimeout(async () => {
             console.log("BEGINNING SELL TX");

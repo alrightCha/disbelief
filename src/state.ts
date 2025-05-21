@@ -1,4 +1,4 @@
-import { PublicKey } from "@solana/web3.js";
+import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 
 export const WSS_RPC = "wss://mainnet.helius-rpc.com/?api-key=16c20cdf-1c1b-44b2-8caa-7597b70d916a"; 
 export const RPC_URL = "https://mainnet.helius-rpc.com/?api-key=16c20cdf-1c1b-44b2-8caa-7597b70d916a"; 
@@ -19,3 +19,4 @@ export const FEE = 50_000_000;
 export const MIN_SLOT_DIFF = 11; 
 export const BASE_SELL_DELAY = 15;
 export const MAX_SELL_DELAY = 60;  
+export const BASE_VAULT_CAP = 1_000_000_000;
