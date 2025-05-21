@@ -9,7 +9,6 @@ import {
   MIN_SCORE,
   BASE_SELL_DELAY,
   MAX_SELL_DELAY,
-  INCREMENT_BY,
 } from "./state";
 import {
   Connection,
@@ -152,7 +151,7 @@ const onLogs: LogsCallback = async (logInfo, ctx) => {
             if (sellTx) {
               const signature = await snipe(admin, sellTx);
             }
-          }, BASE_SELL_DELAY);
+          }, sellAfter);
         }
       } else {
         console.log("Score low. Skipping...");
@@ -186,7 +185,7 @@ function getSellTimeout(score: number): number {
   const increments = Math.floor(scoreIncrease / 100);
 
   // Calculate total timeout in seconds
-  let timeout = baseTimeout + increments * INCREMENT_BY;
+  let timeout = baseTimeout + increments;
   if (timeout > maxTimeout) timeout = maxTimeout;
 
   return timeout * 1000;

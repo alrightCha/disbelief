@@ -23,7 +23,6 @@ export const DEFAULT_BUY = 2;
 export const MIN_SLOT_DIFF = 12; 
 
 //SELL CONFIG
-export const INCREMENT_BY = 7; 
 export const BASE_SELL_DELAY = 15;
 export const MAX_SELL_DELAY = 60;  
 
