@@ -20,6 +20,7 @@ import { BN } from "@coral-xyz/anchor";
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   createAssociatedTokenAccountInstruction,
+  createCloseAccountInstruction,
   getAssociatedTokenAddress,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
@@ -89,16 +90,18 @@ export const getSwapIx = async (
   );
 
   const numberOfPeriod = poolConfigState.poolFees.baseFee.numberOfPeriod;
-  const reductionFactor = parseInt(poolConfigState.poolFees.baseFee.reductionFactor.toString());
+  const reductionFactor = parseInt(
+    poolConfigState.poolFees.baseFee.reductionFactor.toString()
+  );
 
-  console.log("Number of period that should be 37: ", numberOfPeriod); 
-  console.log("Reduction factor that should be 822 or more: ", reductionFactor); 
+  console.log("Number of period that should be 37: ", numberOfPeriod);
+  console.log("Reduction factor that should be 822 or more: ", reductionFactor);
 
   const snipe: boolean =
     numberOfPeriod <= BASE_N_PERIOD && reductionFactor >= BASE_REDUCTION_FACTOR;
 
   if (!snipe && !directionBuy) {
-    console.log("Escaped getting fucked by time")
+    console.log("Escaped getting fucked by time");
     return null;
   }
 
@@ -163,5 +166,15 @@ export const getSwapIx = async (
 
   tx.add(swapIx);
 
+  //Adding close ix
+  if (directionBuy) {
+    const closeIx = createCloseAccountInstruction(
+      ata,
+      buyer.publicKey,
+      buyer.publicKey
+    );
+    tx.add(closeIx);
+  }
+  
   return tx;
 };
