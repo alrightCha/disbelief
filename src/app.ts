@@ -86,8 +86,8 @@ const onLogs: LogsCallback = async (logInfo, ctx) => {
         );
 
         if (buyTx) {
-          // const signature = await snipe(admin, buyTx);
-          //console.log("SIGNATURE RESULT: ", signature);
+          const signature = await snipe(admin, buyTx);
+          console.log("SIGNATURE RESULT: ", signature);
 
           //Sell after 15 seconds
           setTimeout(async () => {
