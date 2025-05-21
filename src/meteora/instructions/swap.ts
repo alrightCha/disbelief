@@ -73,8 +73,8 @@ export const getSwapIx = async (
       virtualPoolState = receivedState;
       if (!directionBuy) {
         console.log("Migration progress: ", receivedState.migrationProgress);
-        console.log("POOL SOL: ", receivedState.baseReserve.toNumber());
-        const pooledTokens = receivedState.baseReserve;
+        const pooledTokens = receivedState.baseReserve.toString();
+        console.log("Pooled tokens: ", pooledTokens)
         const amountInVault = parseInt(pooledTokens) / LAMPORTS_PER_SOL;
         if (amountInVault < BASE_VAULT_CAP) {
           canBuy = true;
