@@ -52,7 +52,7 @@ export const getSwapIx = async (
 
   const client = new DynamicBondingCurveClient(connection, "processed");
 
-  const inAmount: BN = new BN(amountIn);
+  const inAmount: BN = new BN(amountIn.toString()); //Passing number as string for safe BN
 
   console.log("In amount: ", inAmount);
 
