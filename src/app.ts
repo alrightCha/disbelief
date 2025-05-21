@@ -68,12 +68,36 @@ const onLogs: LogsCallback = async (logInfo, ctx) => {
       }
       console.log("Fetching metadata for mint: ", mintInfo.mint);
       const startTweetPerformance = performance.now();
-      const tweetMetadata = await getTweetMetadataFromIpfs(mintInfo.uri, mintInfo.cid);
+      const tweetMetadata = await getTweetMetadataFromIpfs(
+        mintInfo.uri,
+        mintInfo.cid
+      );
       const endPerf = performance.now() - startTweetPerformance;
       console.log(
         "FINDING TWEET METADATA IN PARALLEL TOOK: ",
         endPerf.toFixed(2)
       );
+
+      const profileDetails = await getUserDetails(
+        tweetMetadata.tweetCreatorUserId
+      );
+
+      if (
+        profileDetails.success &&
+        profileDetails.data !== undefined &&
+        profileDetails.data !== null
+      ) {
+        const checkmark = profileDetails.data.verificationStatus;
+        const age = profileDetails.data.accountAgeInDays;
+        const followerCount = profileDetails.data.followerCount;
+
+        if (checkmark == "none") {
+          console.log(
+            "User does not have a bluecheck of goldcheck, escaping..."
+          );
+          return;
+        }
+      }
       const userId = tweetMetadata.tweetCreatorUserId;
 
       const score = await getTweetScoutScore(userId);
