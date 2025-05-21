@@ -19,7 +19,7 @@ export const JITO_TIP = 800_000;
 export const FEE = 1_000_000;
 
 //BUY CONFIG
-export const DEFAULT_BUY = 2; 
+export const DEFAULT_BUY = 0.5; 
 export const MIN_SLOT_DIFF = 12; 
 
 //SELL CONFIG
