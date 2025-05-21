@@ -17,3 +17,5 @@ export const SLIPPAGE = 1000;
 export const JITO_TIP = 800_000;  
 export const FEE = 50_000_000;
 export const MIN_SLOT_DIFF = 11; 
+export const BASE_SELL_DELAY = 15;
+export const MAX_SELL_DELAY = 60;  

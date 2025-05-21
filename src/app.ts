@@ -7,6 +7,8 @@ import {
   DEFAULT_BUY,
   SLIPPAGE,
   MIN_SCORE,
+  BASE_SELL_DELAY,
+  MAX_SELL_DELAY,
 } from "./state";
 import {
   Connection,
@@ -65,10 +67,10 @@ const onLogs: LogsCallback = async (logInfo, ctx) => {
       );
       const userId = tweetMetadata.tweetCreatorUserId;
 
-      const creatorXDetails = await getTweetScoutScore(userId);
+      const score = await getTweetScoutScore(userId);
 
       //WHEN USING TWITTER CHECK: creatorXDetails.success && creatorXDetails.data !== undefined
-      if (creatorXDetails >= MIN_SCORE) {
+      if (score >= MIN_SCORE) {
         //const followersPass = creatorXDetails.data.followerCount > 900;
         //const checkPass = creatorXDetails.data.verificationStatus !== "none";
         //const agePass = creatorXDetails.data.accountAgeInDays > 20;
@@ -89,6 +91,8 @@ const onLogs: LogsCallback = async (logInfo, ctx) => {
           const signature = await snipe(admin, buyTx);
           console.log("SIGNATURE RESULT: ", signature);
 
+          const sellAfter = getSellTimeout(score); 
+          console.log(`Selling after ${sellAfter} ms`); 
           //Sell after 15 seconds
           setTimeout(async () => {
             console.log("BEGINNING SELL TX");
@@ -113,7 +117,7 @@ const onLogs: LogsCallback = async (logInfo, ctx) => {
             );
 
             const signature = await snipe(admin, sellTx);
-          }, 15000);
+          }, sellAfter);
         }
       } else {
         console.log("Score low. Skipping...");
@@ -136,3 +140,19 @@ const filter: LogsFilter = BELIEVE_DEPLOYER;
   console.log("🔌  websocket ready – subscription id:", subId);
   console.log("🪶  waiting for initialize_virtual_pool_with_spl_token …");
 })();
+
+function getSellTimeout(score: number): number {
+  const base = MIN_SCORE;
+  const maxTimeout = MAX_SELL_DELAY; // seconds
+  const baseTimeout = BASE_SELL_DELAY; // seconds
+
+  // Calculate how many full 100s above 80
+  const scoreIncrease = Math.max(score - base, 0);
+  const increments = Math.floor(scoreIncrease / 100);
+
+  // Calculate total timeout in seconds
+  let timeout = baseTimeout + increments * 10;
+  if (timeout > maxTimeout) timeout = maxTimeout;
+
+  return timeout * 1000;
+}
