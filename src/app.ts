@@ -171,7 +171,7 @@ const onLogs: LogsCallback = async (logInfo, ctx) => {
             if (sellTx) {
               const signature = await snipe(admin, sellTx);
             }
-          }, sellAfter);
+          }, BASE_SELL_DELAY);
         }
       } else {
         console.log("Score low. Skipping...");
