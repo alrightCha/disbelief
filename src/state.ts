@@ -10,13 +10,20 @@ export const METEORA_DBC = new PublicKey("dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4Du
 export const JITO_ENDPOINT = "https://mainnet.block-engine.jito.wtf/api/v1/transactions"; 
 export const PINATA_GATEWAY = "gray-real-deer-511.mypinata.cloud";
 
-//BUY CONFIG
-export const MIN_SCORE = 80
-export const DEFAULT_BUY = 1; 
+//TWEETSCOUT CONFIG 
+export const MIN_SCORE = 180; 
+
+//SWAP CONFIG
 export const SLIPPAGE = 1000;
 export const JITO_TIP = 800_000;  
 export const FEE = 1_000_000;
+
+//BUY CONFIG
+export const DEFAULT_BUY = 2; 
 export const MIN_SLOT_DIFF = 12; 
+
+//SELL CONFIG
+export const INCREMENT_BY = 7; 
 export const BASE_SELL_DELAY = 15;
 export const MAX_SELL_DELAY = 60;  
 
