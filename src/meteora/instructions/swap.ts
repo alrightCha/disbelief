@@ -7,7 +7,7 @@ import {
   PublicKey,
   Transaction,
 } from "@solana/web3.js";
-import { FEE, RPC_URL } from "../../state";
+import { FEE, MIN_SLOT_DIFF, RPC_URL } from "../../state";
 import { BN } from "@coral-xyz/anchor";
 
 import {
@@ -19,6 +19,7 @@ import {
 import { sleep } from "../../jito/sdk/rpc/utils";
 
 export const getSwapIx = async (
+  mintSlot: number,
   buyer: Keypair,
   amountIn: number,
   directionBuy: boolean,
@@ -27,9 +28,25 @@ export const getSwapIx = async (
   slippageBps: number | undefined
 ) => {
   const connection = new Connection(RPC_URL, "processed");
+
+  //Ensure that sniper doesn't snipe instantly and lose a lot of funds due to being too early
+  if (!directionBuy) {
+    while (true) {
+      const currentSlot = await connection.getSlot();
+      const currentDiff = currentSlot - mintSlot;
+      console.log("CUrrent diff in slot: ", currentDiff);
+      if (currentDiff >= MIN_SLOT_DIFF) {
+        break;
+      } else {
+        sleep(200);
+      }
+    }
+  }
+
   const client = new DynamicBondingCurveClient(connection, "processed");
 
-  const inAmount = new BN(amountIn);
+  const inAmount: BN = new BN(amountIn);
+
   console.log("In amount: ", inAmount);
 
   const tx = new Transaction();
@@ -60,8 +77,10 @@ export const getSwapIx = async (
   const poolConfigState = await client.state.getPoolConfig(
     virtualPoolState.config
   );
+
   const currentBlockTimestamp = await connection.getSlot();
 
+  console.log("SNIPE SLOT: ", currentBlockTimestamp);
   /**
    * Calculate the amount out for a swap (quote)
    * @param virtualPool - The virtual pool
@@ -83,6 +102,9 @@ export const getSwapIx = async (
     hasReferral: false,
     currentPoint: new BN(currentBlockTimestamp),
   });
+
+  console.log("SWAP PRICE: ", swapQuote.price.beforeSwap.toNumber());
+  console.log("NEXT SWAP PRICE: ", swapQuote.nextSqrtPrice.toNumber());
 
   const totalMs = performance.now() - ipfsStart;
 

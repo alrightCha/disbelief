@@ -9,7 +9,12 @@ import {
   basicIpfs,
   dweb,
   firstSuccessful,
+  infura,
+  ipfsFleek,
+  ipfsThirdweb,
+  nftStorage,
   pinataIpfs,
+  web3Storage,
 } from "../metaplex/parser";
 
 export const buildVersionedTx = async (
@@ -59,8 +64,22 @@ export async function getTweetMetadataFromIpfs(
   const dwebPath = dweb(cid);
   const classicPath = basicIpfs(cid);
   const pinataPath = pinataIpfs(cid);
+  const infuraPath = infura(cid);
+  const nftStoragePath = nftStorage(cid);
+  const web3Path = web3Storage(cid);
+  const fleekPath = ipfsFleek(cid);
+  const thirdPath = ipfsThirdweb(cid);
 
-  const gateways = [dwebPath, classicPath, pinataPath];
+  const gateways = [
+    dwebPath,
+    classicPath,
+    pinataPath,
+    infuraPath,
+    nftStoragePath,
+    web3Path,
+    fleekPath,
+    thirdPath,
+  ];
 
   return firstSuccessful(
     gateways.map((url) => async () => {

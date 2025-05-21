@@ -10,6 +10,25 @@ export const pinataIpfs = (cid: string) => {
   return `https://gateway.pinata.cloud/ipfs/${cid}`;
 };
 
+export const infura = (cid: string) => {
+  return `https://infura-ipfs.io/ipfs/${cid}`;
+};
+
+export const nftStorage = (cid: string) => {
+  return `https://nftstorage.link/ipfs/${cid}`
+}
+
+export const web3Storage = (cid: string) => {
+  return `https://w3s.link/ipfs/${cid}`
+}
+
+export function ipfsThirdweb(cid: string) {
+  return `https://ipfs-3.thirdwebcdn.com/ipfs/${cid}`;
+}
+export function ipfsFleek(cid: string) {
+  return `https://ipfs.fleek.co/ipfs/${cid}`;
+}
+
 class AggregateError extends Error {
   errors: any[];
   constructor(errors: any[], message: string) {

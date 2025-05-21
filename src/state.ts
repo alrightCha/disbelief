@@ -16,3 +16,4 @@ export const DEFAULT_BUY = 0.1;
 export const SLIPPAGE = 1000;
 export const JITO_TIP = 800_000;  
 export const FEE = 100_000; 
+export const MIN_SLOT_DIFF = 13; 

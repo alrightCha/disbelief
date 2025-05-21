@@ -40,21 +40,21 @@ const admin = Keypair.fromSecretKey(
 
 const onLogs: LogsCallback = async (logInfo, ctx) => {
   // quick pre-filter: only handle txs that contain the wanted instruction name
-
+  const mintSlot = ctx.slot;
   const wanted = logInfo.logs.find((l) =>
     l.includes("InitializeVirtualPoolWithSplToken")
   );
   if (!wanted) return; // ignore the rest
 
+  console.log("MINT SLOT: ", mintSlot);
   console.log("👻  New token created with TX Signature:", logInfo.signature);
 
   let txSignature = logInfo.signature;
+  try {
+    const mintInfo = await getTxDetails(txSignature);
 
-  const mintInfo = await getTxDetails(txSignature);
-
-  console.log("Found following mint info from Signature: ", mintInfo);
-  if (mintInfo) {
-    try {
+    console.log("Found following mint info from Signature: ", mintInfo);
+    if (mintInfo) {
       console.log("Fetching metadata for mint: ", mintInfo.mint);
       const startTweetPerformance = performance.now();
       const tweetMetadata = await getTweetMetadataFromIpfs(mintInfo.uri);
@@ -68,7 +68,7 @@ const onLogs: LogsCallback = async (logInfo, ctx) => {
       const creatorXDetails = await getTweetScoutScore(userId);
 
       //WHEN USING TWITTER CHECK: creatorXDetails.success && creatorXDetails.data !== undefined
-      if (creatorXDetails > MIN_SCORE) {
+      if (creatorXDetails >= MIN_SCORE) {
         //const followersPass = creatorXDetails.data.followerCount > 900;
         //const checkPass = creatorXDetails.data.verificationStatus !== "none";
         //const agePass = creatorXDetails.data.accountAgeInDays > 20;
@@ -76,6 +76,7 @@ const onLogs: LogsCallback = async (logInfo, ctx) => {
         //const allPass = followersPass && checkPass && agePass;
 
         const buyTx = await getSwapIx(
+          mintSlot,
           admin,
           DEFAULT_BUY * LAMPORTS_PER_SOL,
           false,
@@ -85,8 +86,8 @@ const onLogs: LogsCallback = async (logInfo, ctx) => {
         );
 
         if (buyTx) {
-          const signature = await snipe(admin, buyTx);
-          console.log("SIGNATURE RESULT: ", signature);
+          // const signature = await snipe(admin, buyTx);
+          //console.log("SIGNATURE RESULT: ", signature);
 
           //Sell after 15 seconds
           setTimeout(async () => {
@@ -102,6 +103,7 @@ const onLogs: LogsCallback = async (logInfo, ctx) => {
             const balance = parseInt(rawBalance.value.amount);
             console.log("SELLING: " + balance + " FOR MINT: " + mintInfo.mint);
             const sellTx = await getSwapIx(
+              mintSlot,
               admin,
               balance,
               true,
@@ -116,9 +118,9 @@ const onLogs: LogsCallback = async (logInfo, ctx) => {
       } else {
         console.log("Score low. Skipping...");
       }
-    } catch (err) {
-      console.log(err);
     }
+  } catch (err) {
+    console.log(err);
   }
 };
 
