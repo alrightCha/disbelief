@@ -60,10 +60,10 @@ export interface TweetMetadata {
 }
 
 export async function getTweetMetadataFromIpfs(
+  uri: string,
   cid: string
 ): Promise<TweetMetadata> {
-
-  const everlandPath = everland(cid); 
+  const everlandPath = everland(cid);
   const dwebPath = dweb(cid);
   const classicPath = basicIpfs(cid);
   const pinataPath = pinataIpfs(cid);
@@ -74,6 +74,7 @@ export async function getTweetMetadataFromIpfs(
   const thirdPath = ipfsThirdweb(cid);
 
   const gateways = [
+    uri,
     everlandPath,
     classicPath,
     dwebPath,

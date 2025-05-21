@@ -1,8 +1,13 @@
 import { RPC_URL } from "../state";
 import { retry } from "../retry";
 
+interface TokenMetaUri {
+  uri: string;
+  cid: string;
+}
+
 // Use the RPC endpoint of your choice.
-export const getTokenMetadata = async (address: string): Promise<string> => {
+export const getTokenMetadata = async (address: string): Promise<TokenMetaUri> => {
   const now = performance.now();
 
   const data = await retry(async () => {
@@ -30,9 +35,18 @@ export const getTokenMetadata = async (address: string): Promise<string> => {
   });
 
   const { metadata, json_uri: uri } = data.result.content;
-  const cid = uri.substring(21, uri.length);
+  const cid = extractCidFromIpfsUrl(uri) || '';
   const finished = performance.now() - now;
 
   console.log("FINDING URI TOOK : ", finished.toFixed(2) + " ms.");
-  return cid;
+  return {
+    uri,
+    cid,
+  };
 };
+
+export function extractCidFromIpfsUrl(url: string): string {
+  // This works for both "ipfs.io/ipfs/CID" and "ipfs://CID"
+  const match = url.match(/\/ipfs\/([^/?#]+)/);
+  return match ? match[1] : "";
+}

@@ -4,11 +4,13 @@ import { SolanaParser } from "@debridge-finance/solana-transaction-parser";
 import DBCIdl from "./IDL/idl.json";
 import { RPC_URL } from "../state";
 import { DYNAMIC_BONDING_CURVE_PROGRAM_ID } from "@meteora-ag/dynamic-bonding-curve-sdk";
+import { extractCidFromIpfsUrl } from "../metaplex/getTokenMetadata";
 
 interface TxData {
   name: string;
   symbol: string;
   uri: string;
+  cid: string; 
   mint: PublicKey;
   pool: PublicKey;
 }
@@ -34,8 +36,8 @@ export const getTxDetails = async (signature: string): Promise<TxData> => {
       const pool: PublicKey = parsed[1].accounts[5].pubkey as PublicKey;
 
       const args: any = parsed[1].args;
-      const rawUri = args.params.uri;
-      const uri = rawUri.substring(21, rawUri.length);
+      const uri = args.params.uri;
+      const cid = extractCidFromIpfsUrl(uri);
 
       const name = args.params.name;
       const symbol = args.params.symbol;
@@ -44,6 +46,7 @@ export const getTxDetails = async (signature: string): Promise<TxData> => {
         name,
         symbol,
         uri,
+        cid,
         mint,
         pool,
       };

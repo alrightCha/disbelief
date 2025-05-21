@@ -68,7 +68,7 @@ const onLogs: LogsCallback = async (logInfo, ctx) => {
       }
       console.log("Fetching metadata for mint: ", mintInfo.mint);
       const startTweetPerformance = performance.now();
-      const tweetMetadata = await getTweetMetadataFromIpfs(mintInfo.uri);
+      const tweetMetadata = await getTweetMetadataFromIpfs(mintInfo.uri, mintInfo.cid);
       const endPerf = performance.now() - startTweetPerformance;
       console.log(
         "FINDING TWEET METADATA IN PARALLEL TOOK: ",
