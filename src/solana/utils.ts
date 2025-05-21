@@ -8,6 +8,7 @@ import {
 import {
   basicIpfs,
   dweb,
+  everland,
   firstSuccessful,
   infura,
   ipfsFleek,
@@ -61,6 +62,8 @@ export interface TweetMetadata {
 export async function getTweetMetadataFromIpfs(
   cid: string
 ): Promise<TweetMetadata> {
+
+  const everlandPath = everland(cid); 
   const dwebPath = dweb(cid);
   const classicPath = basicIpfs(cid);
   const pinataPath = pinataIpfs(cid);
@@ -71,8 +74,9 @@ export async function getTweetMetadataFromIpfs(
   const thirdPath = ipfsThirdweb(cid);
 
   const gateways = [
-    dwebPath,
+    everlandPath,
     classicPath,
+    dwebPath,
     pinataPath,
     infuraPath,
     nftStoragePath,

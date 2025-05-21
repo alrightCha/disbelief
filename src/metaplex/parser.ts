@@ -15,19 +15,24 @@ export const infura = (cid: string) => {
 };
 
 export const nftStorage = (cid: string) => {
-  return `https://nftstorage.link/ipfs/${cid}`
-}
+  return `https://nftstorage.link/ipfs/${cid}`;
+};
 
 export const web3Storage = (cid: string) => {
-  return `https://w3s.link/ipfs/${cid}`
-}
+  return `https://w3s.link/ipfs/${cid}`;
+};
 
 export function ipfsThirdweb(cid: string) {
   return `https://ipfs-3.thirdwebcdn.com/ipfs/${cid}`;
 }
+
 export function ipfsFleek(cid: string) {
   return `https://ipfs.fleek.co/ipfs/${cid}`;
 }
+
+export const everland = (cid: string) => {
+  return `https://${cid}.ipfs.4everland.io`;
+};
 
 class AggregateError extends Error {
   errors: any[];
