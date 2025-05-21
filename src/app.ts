@@ -137,8 +137,8 @@ const onLogs: LogsCallback = async (logInfo, ctx) => {
               false,
               TOKEN_PROGRAM_ID
             );
+            
             let balance = 0;
-
             while (true) {
               try {
                 const rawBalance = await connection.getTokenAccountBalance(ata);
