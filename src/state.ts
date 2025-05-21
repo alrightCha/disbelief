@@ -19,4 +19,7 @@ export const FEE = 1_000_000;
 export const MIN_SLOT_DIFF = 11; 
 export const BASE_SELL_DELAY = 15;
 export const MAX_SELL_DELAY = 60;  
-export const BASE_VAULT_CAP = 1_000_000_000;
+
+//SECURITY MEASURES ANTI SNIPE FUCKER
+export const BASE_N_PERIOD = 37; 
+export const BASE_REDUCTION_FACTOR = 822; 

@@ -8,7 +8,13 @@ import {
   PublicKey,
   Transaction,
 } from "@solana/web3.js";
-import { BASE_VAULT_CAP, FEE, MIN_SLOT_DIFF, RPC_URL } from "../../state";
+import {
+  BASE_N_PERIOD,
+  BASE_REDUCTION_FACTOR,
+  FEE,
+  MIN_SLOT_DIFF,
+  RPC_URL,
+} from "../../state";
 import { BN } from "@coral-xyz/anchor";
 
 import {
@@ -63,22 +69,15 @@ export const getSwapIx = async (
   console.log("POOL: ", pool);
   let virtualPoolState = null;
 
-  //Avoid being the first to buy and getting demolished
-  let canBuy = false;
-
   const ipfsStart = performance.now();
-  while (virtualPoolState == null || !canBuy) {
+  while (virtualPoolState == null) {
     const receivedState = await client.state.getPool(pool);
     if (receivedState != null) {
       virtualPoolState = receivedState;
       if (!directionBuy) {
         console.log("Migration progress: ", receivedState.migrationProgress);
         const pooledTokens = receivedState.baseReserve.toString();
-        console.log("Pooled tokens: ", pooledTokens)
-        const amountInVault = parseInt(pooledTokens) / LAMPORTS_PER_SOL;
-        if (amountInVault < BASE_VAULT_CAP) {
-          canBuy = true;
-        }
+        console.log("Pooled tokens: ", pooledTokens);
       }
     } else {
       sleep(500);
@@ -88,6 +87,20 @@ export const getSwapIx = async (
   const poolConfigState = await client.state.getPoolConfig(
     virtualPoolState.config
   );
+
+  const numberOfPeriod = poolConfigState.poolFees.baseFee.numberOfPeriod;
+  const reductionFactor = parseInt(poolConfigState.poolFees.baseFee.reductionFactor.toString());
+
+  console.log("Number of period that should be 37: ", numberOfPeriod); 
+  console.log("Reduction factor that should be 822 or more: ", reductionFactor); 
+
+  const snipe: boolean =
+    numberOfPeriod <= BASE_N_PERIOD && reductionFactor >= BASE_REDUCTION_FACTOR;
+
+  if (!snipe && !directionBuy) {
+    console.log("Escaped getting fucked by time")
+    return null;
+  }
 
   const currentBlockTimestamp = await connection.getSlot();
 
@@ -152,3 +165,83 @@ export const getSwapIx = async (
 
   return tx;
 };
+
+const mint = "8rsCpmgDGuMfiDP384BxqQpH3vfhxEC7zmsHQE3zoWRp";
+const lp = "ABTt2fdhpnR6y5G5wwVYWoKUtG3mirqLSxCJaDrKEp7W";
+
+//GUW6vDUoaMRd4cggdKjuiNvbBmMR24VjDpDh2WumxFxK -> Fucked by
+//ABTt2fdhpnR6y5G5wwVYWoKUtG3mirqLSxCJaDrKEp7W
+
+const main = async () => {
+  const connection = new Connection(RPC_URL, "processed");
+  const client = new DynamicBondingCurveClient(connection, "processed");
+
+  const receivedState = await client.state.getPool(lp);
+
+  const poolConfigState = await client.state.getPoolConfig(
+    receivedState.config
+  );
+  console.log(poolConfigState.poolFees.baseFee.numberOfPeriod); //Should be 37 -> The lower the better
+  console.log(poolConfigState.poolFees.baseFee.reductionFactor.toString()); //Should be 822 -> the higher the better
+};
+
+main();
+
+/**
+ * 
+ * 
+ *   poolFees: {
+    baseFee: {
+      reductionFactor: <BN: 1>,
+      numberOfPeriod: 65535,
+      feeSchedulerMode: 1,
+      padding0: [Array]
+    },
+    dynamicFee: {
+      initialized: 1,
+      padding: [Array],
+      maxVolatilityAccumulator: 14460000,
+      variableFeeControl: 1913,
+      binStep: 1,
+      filterPeriod: 10,
+      decayPeriod: 120,
+      reductionFactor: 5000,
+      padding2: [Array],
+      binStepU128: <BN: 68db8bac710cb>
+    },
+    padding0: [ <BN: 0>, <BN: 0>, <BN: 0>, <BN: 0>, <BN: 0> ],
+    padding1: [ 0, 0, 0, 0, 0, 0 ],
+    protocolFeePercent: 20,
+    referralFeePercent: 20
+  },
+
+
+
+
+
+    poolFees: {
+    baseFee: {
+      periodFrequency: <BN: 1>,
+      reductionFactor: <BN: 336>,
+      numberOfPeriod: 37,
+      feeSchedulerMode: 1,
+      padding0: [Array]
+    },
+    dynamicFee: {
+      initialized: 1,
+      padding: [Array],
+      maxVolatilityAccumulator: 14460000,
+      variableFeeControl: 1913,
+      binStep: 1,
+      filterPeriod: 10,
+      decayPeriod: 120,
+      reductionFactor: 5000,
+      padding2: [Array],
+      binStepU128: <BN: 68db8bac710cb>
+    },
+    padding0: [ <BN: 0>, <BN: 0>, <BN: 0>, <BN: 0>, <BN: 0> ],
+    padding1: [ 0, 0, 0, 0, 0, 0 ],
+    protocolFeePercent: 20,
+    referralFeePercent: 20
+  },
+ */

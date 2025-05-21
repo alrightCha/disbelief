@@ -124,8 +124,9 @@ const onLogs: LogsCallback = async (logInfo, ctx) => {
               mintInfo.pool.toString(),
               5000
             );
-
-            const signature = await snipe(admin, sellTx);
+            if (sellTx) {
+              const signature = await snipe(admin, sellTx);
+            }
           }, sellAfter);
         }
       } else {
