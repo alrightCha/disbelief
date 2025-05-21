@@ -130,43 +130,41 @@ const onLogs: LogsCallback = async (logInfo, ctx) => {
 
           //Sell after 15 seconds
           setTimeout(async () => {
-            try {
-              console.log("BEGINNING SELL TX");
-              const ata = getAssociatedTokenAddressSync(
-                mintInfo.mint,
-                admin.publicKey,
-                false,
-                TOKEN_PROGRAM_ID
-              );
-              let balance = 0;
+            console.log("BEGINNING SELL TX");
+            const ata = getAssociatedTokenAddressSync(
+              mintInfo.mint,
+              admin.publicKey,
+              false,
+              TOKEN_PROGRAM_ID
+            );
+            let balance = 0;
 
-              while (true) {
+            while (true) {
+              try {
                 const rawBalance = await connection.getTokenAccountBalance(ata);
                 balance = parseInt(rawBalance.value.amount);
-                if (balance > 0) {
-                  break;
-                } else {
-                  sleep(100);
-                }
+              } catch (err) {
+                sleep(100); 
               }
+              if (balance > 0) {
+                break;
+              } else {
+                sleep(100);
+              }
+            }
 
-              console.log(
-                "SELLING: " + balance + " FOR MINT: " + mintInfo.mint
-              );
-              const sellTx = await getSwapIx(
-                mintSlot,
-                admin,
-                balance,
-                true,
-                mintInfo.mint.toString(),
-                mintInfo.pool.toString(),
-                5000
-              );
-              if (sellTx) {
-                const signature = await snipe(admin, sellTx);
-              }
-            } catch (error: any) {
-              console.log(error);
+            console.log("SELLING: " + balance + " FOR MINT: " + mintInfo.mint);
+            const sellTx = await getSwapIx(
+              mintSlot,
+              admin,
+              balance,
+              true,
+              mintInfo.mint.toString(),
+              mintInfo.pool.toString(),
+              5000
+            );
+            if (sellTx) {
+              const signature = await snipe(admin, sellTx);
             }
           }, sellAfter);
         }
