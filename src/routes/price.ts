@@ -10,17 +10,19 @@ export const getPriceForMint = async (
   next: NextFunction
 ) => {
   try {
+    console.log("Received request for mint price")
     const { mint } = req.body;
-
+    console.log("Mint requested: ", mint)
     if (!mint) {
       throw new Error("Missing mint address");
     }
 
     const tokenLP = getPoolForMint(mint);
+    console.log("Found token lp: ", tokenLP.pool.toString())
     const lp = tokenLP.pool;
 
     const tokenPrice = await getTokenPrice(lp);
-
+    console.log("Found token price: ", tokenPrice)
     if (!tokenPrice) {
       throw new Error("Price not found");
     }
