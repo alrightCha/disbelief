@@ -56,12 +56,21 @@ export const setPoolForMint = (mint: string, pool: PublicKey, ticker: string) =>
 export const getPoolForMint = (mint: string) => {
   return mintToPool[mint];
 };
+
 //Retrieve userId for public key provided
 export const getUserTelegramId = (pubkey: string) => pubkeyToUserId[pubkey];
 
 //Returns true if user is not targeting anybody, meaning that he is using our AI model
-export const userIsUsingTweetscout = (pubkey: string) =>
-  sniperToCreators[pubkey].length == 0;
+export const userIsUsingTweetscout = (pubkey: string) => {
+  if (
+    sniperToCreators[pubkey] !== undefined &&
+    sniperToCreators[pubkey] !== null
+  ) {
+    return sniperToCreators[pubkey].length == 0;
+  } else {
+    return true;
+  }
+};
 
 //Find all watcher public keys for a specific username
 export const usernameWatchedBy = (username: string) => {
@@ -118,7 +127,7 @@ export const passedSales = () => {
   let salesPassed: SwapParams[] = [];
   Object.entries(sales).forEach(([userPubkey, sales]: [string, SaleInfo[]]) => {
     const canSell = activeSnipers[userPubkey];
-    if (canSell) {
+    if (canSell !== null && canSell !== undefined) {
       const passedSalesForUser = sales.filter(
         (potentialSale: SaleInfo) => potentialSale.when < now
       );
@@ -153,29 +162,44 @@ export const addSaleInXForSniper = (
     when: sellIn,
     token: token,
   };
-  sales[user].push(saleInfo);
+  const currentState = sales[user];
+  if (currentState !== undefined) {
+    sales[user].push(saleInfo);
+  } else {
+    sales[user] = [saleInfo];
+  }
 };
 
 //remove from saleInfo
 export const removeSale = (user: string, token: PublicKey) => {
+  if (sales[user] == undefined || sales[user].length == 0) {
+    return;
+  }
   const newSales = sales[user].filter((sale: SaleInfo) => sale.token !== token);
   sales[user] = newSales;
 };
 
 //Extract all tokens from tpslRecord
 export const tpslSales = () => {
-  return Object.entries(tpsl)
+  return Object.entries(tpsl);
 };
 
 //Add new sale to tpsl
 export const addNewTPSL = (user: string, tpslInfo: CancelSale) => {
-  tpsl[user].push(tpslInfo);
+  const currentState = tpsl[user];
+  if (currentState !== undefined) {
+    tpsl[user].push(tpslInfo);
+  } else {
+    tpsl[user] = [tpslInfo];
+  }
 };
 
 //Remove sale from tpsl
 export const removeTPSLForUser = (user: string, token: PublicKey) => {
-  const res = tpsl[user].filter((tpslInfo) => tpslInfo.token !== token);
-  tpsl[user] = res;
+  if (tpsl[user] !== undefined) {
+    const res = tpsl[user].filter((tpslInfo) => tpslInfo.token !== token);
+    tpsl[user] = res;
+  }
 };
 
 //TODO:

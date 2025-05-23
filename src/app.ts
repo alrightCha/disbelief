@@ -98,9 +98,15 @@ setInterval(() => {
         false,
         TOKEN_PROGRAM_ID
       );
+      
       connection.getTokenAccountBalance(ata).then(async (rawBalance) => {
         const balance = parseInt(rawBalance.value.amount);
         const poolInfo = getPoolForMint(sale.token.toString());
+
+        if(!poolInfo){
+            return 
+        }
+
         const sellTx = await getSwapIx(
           0,
           kp,

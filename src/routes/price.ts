@@ -18,6 +18,11 @@ export const getPriceForMint = async (
     }
 
     const tokenLP = getPoolForMint(mint);
+    
+    if(!tokenLP){
+        throw new Error("Could not find LP address for the provided token.")
+    }
+
     console.log("Found token lp: ", tokenLP.pool.toString())
     const lp = tokenLP.pool;
 
