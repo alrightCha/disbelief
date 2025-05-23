@@ -1,12 +1,9 @@
 import { getTxDetails } from "./solana/parse";
-import { getUserDetails } from "./x/utils";
-import { sleep } from "./jito/sdk/rpc/utils";
 import { Keypair, LogsCallback } from "@solana/web3.js";
 import { getTweetMetadataFromIpfs } from "./solana/utils";
 import { getTweetScoutScore } from "./x/scout";
 import { getSwapIx } from "./meteora/instructions/swap";
 import { MIN_SCORE } from "./state";
-import { SLIPPAGE } from "./state";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { snipe } from "./jito/snipe";
 import bs58 from "bs58";
@@ -99,7 +96,7 @@ export const onLogs: LogsCallback = async (logInfo, ctx) => {
             snipe(userKeypair, buyTx.tx, buyerParams.jitoTip);
             const uid = getUserTelegramId(userKeypair.publicKey.toString()); 
             const message = `✅ :  $${mintInfo.symbol} for ${buyerParams.buyAmount} SOL`
-            notifyTGUser(uid, message, NotificationEvent.Buy, mintInfo.mint.toString()); 
+            notifyTGUser(uid, message, NotificationEvent.Buy, mintInfo.mint.toString(), buyTx.earned); 
             if (buyerParams.sellMode.type == "sell_after_seconds") {
               addSaleInXForSniper(
                 userKeypair.publicKey.toString(),

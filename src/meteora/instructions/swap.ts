@@ -195,12 +195,12 @@ export const getSwapIx = async (
     tx.add(taxIx);
   }
 
-  const price = swapQuote.price.afterSwap.toString();
-  const lower = parseInt(price) / 1_000_000; 
-
+  const result = await getTokenPrice(pool)
+  const price = result ?? 0
+  
   return {
     tx: tx,
-    price: lower,
+    price: price,
     earned: swapQuote.minimumAmountOut.toString()
   };
 };
@@ -209,10 +209,28 @@ export const getTokenPrice = async (pool: PublicKey) => {
   const connection = new Connection(RPC_URL, "processed");
   const client = new DynamicBondingCurveClient(connection, "processed");
   const receivedState = await client.state.getPool(pool);
+
+  const slot = await connection.getSlot()
   if(receivedState){
-    const price =  receivedState.sqrtPrice.toString(); 
-    const lower = parseInt(price) / 1_000_000; 
-    return lower; 
+    const poolConfigState = await client.state.getPoolConfig(
+      receivedState.config
+    );
+
+    const swapQuote = await client.pool.swapQuote({
+      virtualPool: receivedState,
+      config: poolConfigState,
+      swapBaseForQuote: true,
+      amountIn: new BN(1_000_000_000),
+      slippageBps: 0,
+      hasReferral: false,
+      currentPoint: new BN(slot),
+    });
+
+    const tokensGet = swapQuote.minimumAmountOut; 
+    const pricePerToken = tokensGet / LAMPORTS_PER_SOL
+    
+    return pricePerToken
+   
   }else{
     return null; 
   }

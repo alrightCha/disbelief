@@ -35,6 +35,7 @@ import {
   tpslSales,
 } from "./watchers";
 import { NotificationEvent, notifyTGUser } from "./notify";
+import { getPriceForMint } from "./routes/price";
 
 dotenv.config();
 
@@ -64,6 +65,7 @@ function localhostOnly(req: Request, res: Response, next: NextFunction) {
 router.post("/watch", watchTokens);
 router.post("/sell", sellTokensForKeypair);
 router.post("/stop", stopWatching);
+router.post("/price", getPriceForMint); 
 
 app.use(router);
 
@@ -116,7 +118,7 @@ setInterval(() => {
             //TODO: Notify user when sale is made
             const userId = getUserTelegramId(kp.publicKey.toString());
             const message = `🏷️ NEW SALE:  ${balance} $${poolInfo.ticker} for ${sellTx.earned} SOL.`;
-            notifyTGUser(userId, message, NotificationEvent.Sale, sale.token.toString());
+            notifyTGUser(userId, message, NotificationEvent.Sale, sale.token.toString(), sellTx.earned);
           }
         }
       });
@@ -142,6 +144,7 @@ setInterval(async () => {
       const sl = sellerSales[j].sl;
       const pool = getPoolForMint(currentSale.toString());
       const currentPrice = await getTokenPrice(pool.pool);
+
       if (currentPrice !== null) {
         let sell = 0;
 
@@ -180,7 +183,7 @@ setInterval(async () => {
               if (signature !== undefined) {
                 const userId = getUserTelegramId(seller);
                 const message = `🏷️ NEW SALE (${sell == 1 ? " 🤑 SL" : "🥴 TP"} HIT):  ${balance} $${pool.ticker} for ${sellTx.earned} SOL.`;
-                notifyTGUser(userId, message, NotificationEvent.Sale, currentSale.toString());
+                notifyTGUser(userId, message, NotificationEvent.Sale, currentSale.toString(), sellTx.earned);
                 removeTPSLForUser(seller, currentSale)
               }
             }
