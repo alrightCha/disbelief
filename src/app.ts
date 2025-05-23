@@ -1,191 +1,77 @@
 import { snipe } from "./jito/snipe";
+import { onLogs } from "./tokenListener";
+import express, { NextFunction, Request, Response } from "express";
+import { watchTokens } from "./routes/watch";
+import { Router } from "express";
 
 import {
   BELIEVE_DEPLOYER,
   WSS_RPC,
   RPC_URL,
-  DEFAULT_BUY,
-  SLIPPAGE,
-  MIN_SCORE,
-  BASE_SELL_DELAY,
-  MAX_SELL_DELAY,
 } from "./state";
 import {
   Connection,
-  LAMPORTS_PER_SOL,
-  LogsCallback,
   LogsFilter,
   Keypair,
-  PublicKey,
 } from "@solana/web3.js";
 
 import {
   getAssociatedTokenAddressSync,
-  getAccount,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
-
-import { getTweetMetadataFromIpfs } from "./solana/utils";
-import { getTweetScoutScore } from "./x/scout";
-import { getSwapIx } from "./meteora/instructions/swap";
+import { getSwapIx, getTokenPrice } from "./meteora/instructions/swap";
 import bs58 from "bs58";
 import dotenv from "dotenv";
-import { getTxDetails } from "./solana/parse";
-import { getUserDetails } from "./x/utils";
-import { sleep } from "./jito/sdk/rpc/utils";
+import { sellTokensForKeypair } from "./routes/sell";
+import { stopWatching } from "./routes/stop";
+import {
+  getParamsForSniper,
+  getPoolForMint,
+  getUserTelegramId,
+  passedSales,
+  removeSale,
+  removeTPSLForUser,
+  SwapParams,
+  tpslSales,
+} from "./watchers";
+import { NotificationEvent, notifyTGUser } from "./notify";
 
 dotenv.config();
 
-const connection = new Connection(RPC_URL, { wsEndpoint: WSS_RPC });
-const admin = Keypair.fromSecretKey(
-  bs58.decode(process.env.ADMIN_SECRET || "")
-);
+const app = express();
+app.use(express.json());
 
-const onLogs: LogsCallback = async (logInfo, ctx) => {
-  // quick pre-filter: only handle txs that contain the wanted instruction name
-  const mintSlot = ctx.slot;
-  const wanted = logInfo.logs.find((l) =>
-    l.includes("InitializeVirtualPoolWithSplToken")
-  );
-  if (!wanted) return; // ignore the rest
+const router = Router();
 
-  console.log("MINT SLOT: ", mintSlot);
-  console.log("👻  New token created with TX Signature:", logInfo.signature);
 
-  let txSignature = logInfo.signature;
-  try {
-    const mintInfo = await getTxDetails(txSignature);
-
-    console.log("Found following mint info from Signature: ", mintInfo);
-    if (mintInfo) {
-      const name = mintInfo.name;
-      const symbol = mintInfo.symbol;
-      if (
-        name.trim().toLowerCase() == "test" ||
-        symbol.trim().toLowerCase() == "test"
-      ) {
-        console.log("Breaking early. This is a test token.");
-        return;
-      }
-      console.log("Fetching metadata for mint: ", mintInfo.mint);
-      const startTweetPerformance = performance.now();
-      const tweetMetadata = await getTweetMetadataFromIpfs(
-        mintInfo.uri,
-        mintInfo.cid
-      );
-      const endPerf = performance.now() - startTweetPerformance;
-      console.log(
-        "FINDING TWEET METADATA IN PARALLEL TOOK: ",
-        endPerf.toFixed(2)
-      );
-
-      const profileDetails = await getUserDetails(
-        tweetMetadata.tweetCreatorUserId
-      );
-
-      if (
-        profileDetails.success &&
-        profileDetails.data !== undefined &&
-        profileDetails.data !== null
-      ) {
-        const checkmark = profileDetails.data.verificationStatus;
-        const age = profileDetails.data.accountAgeInDays;
-        const followerCount = profileDetails.data.followerCount;
-
-        if (checkmark == "none") {
-          console.log(
-            "User does not have a bluecheck of goldcheck, escaping..."
-          );
-          return;
-        }
-      }
-      const userId = tweetMetadata.tweetCreatorUserId;
-
-      const score = await getTweetScoutScore(userId);
-
-      //WHEN USING TWITTER CHECK: creatorXDetails.success && creatorXDetails.data !== undefined
-      if (score >= MIN_SCORE) {
-        //const followersPass = creatorXDetails.data.followerCount > 900;
-        //const checkPass = creatorXDetails.data.verificationStatus !== "none";
-        //const agePass = creatorXDetails.data.accountAgeInDays > 20;
-
-        //const allPass = followersPass && checkPass && agePass;
-
-        const buyTx = await getSwapIx(
-          mintSlot,
-          admin,
-          DEFAULT_BUY * LAMPORTS_PER_SOL,
-          false,
-          mintInfo.mint.toString(),
-          mintInfo.pool.toString(),
-          SLIPPAGE
-        );
-
-        if (buyTx) {
-          const signature = await snipe(admin, buyTx);
-          console.log("SIGNATURE RESULT: ", signature);
-
-          const sellAfter = getSellTimeout(score);
-          console.log(`Selling after ${sellAfter} ms`);
-
-          //Sell after 15 seconds if score is below 400. If not, sell manually by checking X profile
-          if(score > 400){
-            return; 
-          }
-          setTimeout(async () => {
-            console.log("BEGINNING SELL TX");
-            const ata = getAssociatedTokenAddressSync(
-              mintInfo.mint,
-              admin.publicKey,
-              false,
-              TOKEN_PROGRAM_ID
-            );
-            
-            let balance = 0;
-            while (true) {
-              try {
-                const rawBalance = await connection.getTokenAccountBalance(ata);
-                balance = parseInt(rawBalance.value.amount);
-              } catch (err) {
-                console.log("error finding balance for ata: ", err)
-                sleep(100); 
-              }
-              if (balance > 0) {
-                break;
-              } else {
-                console.log("Balance still at 0.")
-                sleep(100);
-              }
-            }
-
-            console.log("SELLING: " + balance + " FOR MINT: " + mintInfo.mint);
-            const sellTx = await getSwapIx(
-              mintSlot,
-              admin,
-              balance,
-              true,
-              mintInfo.mint.toString(),
-              mintInfo.pool.toString(),
-              5000
-            );
-            if (sellTx) {
-              const signature = await snipe(admin, sellTx);
-            }
-          }, BASE_SELL_DELAY);
-        }
-      } else {
-        console.log("Score low. Skipping...");
-      }
+function localhostOnly(req: Request, res: Response, next: NextFunction) {
+    // Handles both IPv4 and IPv6 localhost
+    const remoteAddress = req.socket.remoteAddress;
+    if (
+      remoteAddress === "127.0.0.1" ||
+      remoteAddress === "::1" ||
+      remoteAddress === "::ffff:127.0.0.1"
+    ) {
+      return next();
+    } else {
+      res.status(403).json({ error: "Forbidden: Localhost only" });
     }
-  } catch (err) {
-    console.log(err);
   }
-};
+  
+  // Apply to all endpoints in the router
+  router.use(localhostOnly);
 
+router.post("/watch", watchTokens);
+router.post("/sell", sellTokensForKeypair);
+router.post("/stop", stopWatching);
+
+app.use(router);
+
+const connection = new Connection(RPC_URL, { wsEndpoint: WSS_RPC });
 const filter: LogsFilter = BELIEVE_DEPLOYER;
 
 (async () => {
-  const subId = await connection.onLogs(
+  const subId = connection.onLogs(
     filter, // WS filter :contentReference[oaicite:1]{index=1}
     onLogs,
     "confirmed"
@@ -195,18 +81,117 @@ const filter: LogsFilter = BELIEVE_DEPLOYER;
   console.log("🪶  waiting for initialize_virtual_pool_with_spl_token …");
 })();
 
-function getSellTimeout(score: number): number {
-  const base = MIN_SCORE;
-  const maxTimeout = MAX_SELL_DELAY; // seconds
-  const baseTimeout = BASE_SELL_DELAY; // seconds
+//TODO:
+// Add loops for checking passed sales.
+//Sell when sales passed and emit sell event to tg to send message to notify users
+setInterval(() => {
+  const havePassed = passedSales();
+  havePassed.map((sale: SwapParams) => {
+    try {
+      const secret = sale.signerBase58;
+      const kp = Keypair.fromSecretKey(bs58.decode(secret));
+      const ata = getAssociatedTokenAddressSync(
+        sale.token,
+        kp.publicKey,
+        false,
+        TOKEN_PROGRAM_ID
+      );
+      connection.getTokenAccountBalance(ata).then(async (rawBalance) => {
+        const balance = parseInt(rawBalance.value.amount);
+        const poolInfo = getPoolForMint(sale.token.toString());
+        const sellTx = await getSwapIx(
+          0,
+          kp,
+          balance,
+          true,
+          sale.token.toString(),
+          poolInfo.pool.toString(),
+          sale.slippage
+        );
+        if (sellTx) {
+          const signature = await snipe(kp, sellTx.tx, sale.jitoTip);
+          //remove sale from our arrays because it has been dealt with
+          if (signature !== undefined) {
+            removeSale(kp.publicKey.toString(), sale.token);
+            //TODO: Notify user when sale is made
+            const userId = getUserTelegramId(kp.publicKey.toString());
+            const message = `🏷️ NEW SALE:  ${balance} $${poolInfo.ticker} for ${sellTx.earned} SOL.`;
+            notifyTGUser(userId, message, NotificationEvent.Sale);
+          }
+        }
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  });
+}, 1000);
 
-  // Calculate how many full 100s above 80
-  const scoreIncrease = Math.max(score - base, 0);
-  const increments = Math.floor(scoreIncrease / 100);
+//TODO: Add loop to check price of watched tokens with TP/SL Strategy
+//Make sales happen when tp or sl touches for given user requests
+//Notify user with message about sell made when it does
+setInterval(async () => {
+  const sales = tpslSales();
+  for (let i = 0; i < sales.length; i++) {
+    let seller = sales[i][0];
+    const sniperSettings = getParamsForSniper(seller);
+    let sellerSales = sales[i][1];
+    for (let j = 0; j < sellerSales.length; j++) {
+      const currentSale = sellerSales[j].token;
 
-  // Calculate total timeout in seconds
-  let timeout = baseTimeout + increments;
-  if (timeout > maxTimeout) timeout = maxTimeout;
+      const tp = sellerSales[j].tp;
+      const sl = sellerSales[j].sl;
+      const pool = getPoolForMint(currentSale.toString());
+      const currentPrice = await getTokenPrice(pool.pool);
+      if (currentPrice !== null) {
+        let sell = 0;
 
-  return timeout * 1000;
-}
+        if (currentPrice <= sl) {
+          sell = 1;
+        }
+
+        if (currentPrice >= tp) {
+          sell = 2;
+        }
+
+        if (sell > 0) {
+          const secret = sniperSettings.keypair;
+          const kp = Keypair.fromSecretKey(bs58.decode(secret));
+          const ata = getAssociatedTokenAddressSync(
+            currentSale,
+            kp.publicKey,
+            false,
+            TOKEN_PROGRAM_ID
+          );
+          connection.getTokenAccountBalance(ata).then(async (rawBalance) => {
+            const balance = parseInt(rawBalance.value.amount);
+            const poolInfo = getPoolForMint(currentSale.toString());
+            const sellTx = await getSwapIx(
+              0,
+              kp,
+              balance,
+              true,
+              currentSale.toString(),
+              poolInfo.pool.toString(),
+              sniperSettings.slippage, 
+            );
+            if (sellTx) {
+              const signature = await snipe(kp, sellTx.tx, sniperSettings.jitoTip);
+              //remove sale from our arrays because it has been dealt with
+              if (signature !== undefined) {
+                const userId = getUserTelegramId(seller);
+                const message = `🏷️ NEW SALE (${sell == 1 ? " 🤑 SL" : "🥴 TP"} HIT):  ${balance} $${pool.ticker} for ${sellTx.earned} SOL.`;
+                notifyTGUser(userId, message, NotificationEvent.Sale);
+                removeTPSLForUser(seller, currentSale)
+              }
+            }
+          });
+        }
+      }
+    }
+  }
+}, 4000);
+
+const PORT = 3002;
+app.listen(PORT, () => {
+  console.log(`Server running on http://127.0.0.1:${PORT}`);
+});

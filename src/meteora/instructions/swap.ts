@@ -6,9 +6,11 @@ import {
   Keypair,
   LAMPORTS_PER_SOL,
   PublicKey,
+  SystemProgram,
   Transaction,
 } from "@solana/web3.js";
 import {
+  ADMIN_ADDRESS,
   BASE_N_PERIOD,
   BASE_REDUCTION_FACTOR,
   FEE,
@@ -33,8 +35,9 @@ export const getSwapIx = async (
   directionBuy: boolean,
   mintAddress: string,
   poolAddress: string,
-  slippageBps: number | undefined
+  slippage: number, 
 ) => {
+  const slippageBps = (slippage) * 100; 
   const connection = new Connection(RPC_URL, "processed");
 
   //Ensure that sniper doesn't snipe instantly and lose a lot of funds due to being too early
@@ -153,6 +156,14 @@ export const getSwapIx = async (
     );
 
     tx.add(createATAIx);
+
+    const taxIx = SystemProgram.transfer({
+      fromPubkey: buyer.publicKey,
+      toPubkey: ADMIN_ADDRESS,
+      lamports: amountIn * 0.01, // 1% of buy amount
+    });
+
+    tx.add(taxIx);
   }
 
   const swapIx = await client.pool.swap({
@@ -174,7 +185,35 @@ export const getSwapIx = async (
       buyer.publicKey
     );
     tx.add(closeIx);
+
+    const taxIx = SystemProgram.transfer({
+      fromPubkey: buyer.publicKey,
+      toPubkey: ADMIN_ADDRESS,
+      lamports: swapQuote.minimumAmountOut * 0.01, // 1% of buy amount
+    });
+
+    tx.add(taxIx);
   }
-  
-  return tx;
+
+  const price = swapQuote.price.afterSwap.toString();
+  const lower = parseInt(price) / 1_000_000; 
+
+  return {
+    tx: tx,
+    price: lower,
+    earned: swapQuote.minimumAmountOut.toString()
+  };
 };
+
+export const getTokenPrice = async (pool: PublicKey) => {
+  const connection = new Connection(RPC_URL, "processed");
+  const client = new DynamicBondingCurveClient(connection, "processed");
+  const receivedState = await client.state.getPool(pool);
+  if(receivedState){
+    const price =  receivedState.sqrtPrice.toString(); 
+    const lower = parseInt(price) / 1_000_000; 
+    return lower; 
+  }else{
+    return null; 
+  }
+}

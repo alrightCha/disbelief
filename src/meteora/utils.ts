@@ -22,6 +22,7 @@ export const getPoolForMint = async (
         console.log("Not found. Retrying..")
         sleep(5000); 
       }else{
+        console.log(pool[0].publicKey); 
         return pool[0].publicKey;
       }
     }

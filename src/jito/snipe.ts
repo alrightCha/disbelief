@@ -4,12 +4,13 @@ import {
   PublicKey,
   SystemProgram,
   Transaction,
+  LAMPORTS_PER_SOL,
 } from "@solana/web3.js";
 import { BLOCK_ENGINE_URL, JITO_ENDPOINT, JITO_TIP, RPC_URL } from "../state";
 import { searcherClient } from "../jito/sdk/block-engine/searcher";
 import { buildVersionedTx } from "../solana/utils";
 
-export const snipe = async (signer: Keypair, transaction: Transaction) => {
+export const snipe = async (signer: Keypair, transaction: Transaction, tipAmount: number) => {
   const blockEngineUrl = BLOCK_ENGINE_URL;
   const connection = new Connection(RPC_URL, "processed");
 
@@ -21,10 +22,11 @@ export const snipe = async (signer: Keypair, transaction: Transaction) => {
     const account = tip.value[0];
     const tipAccount = new PublicKey(account);
     console.log(account);
+
     const tipIx = SystemProgram.transfer({
       fromPubkey: signer.publicKey,
       toPubkey: tipAccount,
-      lamports: JITO_TIP,
+      lamports: tipAmount * LAMPORTS_PER_SOL,
     });
 
     transaction.add(tipIx);

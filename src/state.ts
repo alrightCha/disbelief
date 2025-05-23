@@ -1,4 +1,4 @@
-import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 
 export const WSS_RPC = "wss://mainnet.helius-rpc.com/?api-key=16c20cdf-1c1b-44b2-8caa-7597b70d916a"; 
 export const RPC_URL = "https://mainnet.helius-rpc.com/?api-key=16c20cdf-1c1b-44b2-8caa-7597b70d916a"; 
@@ -9,6 +9,7 @@ export const METAPLEX_PUBKEY = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a
 export const METEORA_DBC = new PublicKey("dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN"); 
 export const JITO_ENDPOINT = "https://mainnet.block-engine.jito.wtf/api/v1/transactions"; 
 export const PINATA_GATEWAY = "gray-real-deer-511.mypinata.cloud";
+export const ADMIN_ADDRESS = new PublicKey("kJi8x2ZxVV4YkqNAeEK2wZ9ZFgHctFDVG8XX6pfhkek"); 
 
 //TWEETSCOUT CONFIG 
 export const MIN_SCORE = 180; 
@@ -29,3 +30,4 @@ export const MAX_SELL_DELAY = 60;
 //SECURITY MEASURES ANTI SNIPE FUCKER
 export const BASE_N_PERIOD = 37; 
 export const BASE_REDUCTION_FACTOR = 822; 
+
