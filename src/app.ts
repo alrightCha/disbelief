@@ -116,7 +116,7 @@ setInterval(() => {
             //TODO: Notify user when sale is made
             const userId = getUserTelegramId(kp.publicKey.toString());
             const message = `🏷️ NEW SALE:  ${balance} $${poolInfo.ticker} for ${sellTx.earned} SOL.`;
-            notifyTGUser(userId, message, NotificationEvent.Sale);
+            notifyTGUser(userId, message, NotificationEvent.Sale, sale.token.toString());
           }
         }
       });
@@ -180,7 +180,7 @@ setInterval(async () => {
               if (signature !== undefined) {
                 const userId = getUserTelegramId(seller);
                 const message = `🏷️ NEW SALE (${sell == 1 ? " 🤑 SL" : "🥴 TP"} HIT):  ${balance} $${pool.ticker} for ${sellTx.earned} SOL.`;
-                notifyTGUser(userId, message, NotificationEvent.Sale);
+                notifyTGUser(userId, message, NotificationEvent.Sale, currentSale.toString());
                 removeTPSLForUser(seller, currentSale)
               }
             }

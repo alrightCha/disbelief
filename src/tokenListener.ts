@@ -93,12 +93,13 @@ export const onLogs: LogsCallback = async (logInfo, ctx) => {
             mintInfo.pool.toString(),
             buyerParams.slippage, 
           );
+
           //Snipe token + store sell if sell mode exists
           if (buyTx) {
             snipe(userKeypair, buyTx.tx, buyerParams.jitoTip);
             const uid = getUserTelegramId(userKeypair.publicKey.toString()); 
-            const message = `✅ NEW BUY:  ${buyTx.earned} $${mintInfo.symbol} at ${buyTx.price} SOL per Token for ${buyerParams.buyAmount} SOL`
-            notifyTGUser(uid, message, NotificationEvent.Buy); 
+            const message = `✅ :  $${mintInfo.symbol} for ${buyerParams.buyAmount} SOL`
+            notifyTGUser(uid, message, NotificationEvent.Buy, mintInfo.mint.toString()); 
             if (buyerParams.sellMode.type == "sell_after_seconds") {
               addSaleInXForSniper(
                 userKeypair.publicKey.toString(),
