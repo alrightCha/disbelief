@@ -47,16 +47,6 @@ export const sniperToParams: Record<string, SnipeParams> = {};
 export const sales: Record<string, SaleInfo[]> = {};
 export const tpsl: Record<string, CancelSale[]> = {};
 
-setInterval(() => {
-  console.log("Stored data: ")
-  console.log("mint to pool: ", mintToPool); 
-  console.log("pubkey to user id: ", pubkeyToUserId)
-  console.log("Active snipers: ", activeSnipers); 
-  console.log("TO CREATOR: ", sniperToCreators); 
-  console.log("sniper to params: ", sniperToParams); 
-
-}, 10000);
-
 export const setPoolForMint = (mint: string, pool: PublicKey, ticker: string) =>
   (mintToPool[mint] = {
     pool,
