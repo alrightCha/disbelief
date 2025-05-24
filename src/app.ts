@@ -84,7 +84,7 @@ const filter: LogsFilter = BELIEVE_DEPLOYER;
 //Sell when sales passed and emit sell event to tg to send message to notify users
 setInterval(() => {
   const havePassed = passedSales();
-  havePassed.map((sale: SwapParams) => {
+  havePassed.map(async (sale: SwapParams) => {
     try {
       const secret = sale.signerBase58;
       const kp = Keypair.fromSecretKey(bs58.decode(secret));
@@ -94,40 +94,45 @@ setInterval(() => {
         false,
         TOKEN_PROGRAM_ID
       );
+      const accountInfo = await connection.getAccountInfo(ata);
+      if (!accountInfo) {
+        // The account does NOT exist; handle accordingly
+        console.log("Associated token account does not exist!");
+      }
 
       connection.getTokenAccountBalance(ata).then(async (rawBalance) => {
         const balance = parseInt(rawBalance.value.amount);
         const poolInfo = getPoolForMint(sale.token.toString());
 
         if (!poolInfo) {
-          return;
-        }
+          removeSale(kp.publicKey.toString(), sale.token);
+        } else {
+          const sellTx = await getSwapIx(
+            0,
+            kp,
+            balance,
+            true,
+            sale.token.toString(),
+            poolInfo.pool.toString(),
+            sale.slippage
+          );
 
-        const sellTx = await getSwapIx(
-          0,
-          kp,
-          balance,
-          true,
-          sale.token.toString(),
-          poolInfo.pool.toString(),
-          sale.slippage
-        );
-        
-        if (sellTx) {
-          const signature = await snipe(kp, sellTx.tx, sale.jitoTip);
-          //remove sale from our arrays because it has been dealt with
-          if (signature !== undefined) {
-            removeSale(kp.publicKey.toString(), sale.token);
-            //TODO: Notify user when sale is made
-            const userId = getUserTelegramId(kp.publicKey.toString());
-            const message = `🏷️ NEW SALE:  ${balance / 1_000_000_000} $${poolInfo.ticker} for ${sellTx.earned / LAMPORTS_PER_SOL} SOL.`;
-            notifyTGUser(
-              userId,
-              message,
-              NotificationEvent.Sale,
-              sale.token.toString(),
-              sellTx.earned
-            );
+          if (sellTx) {
+            const signature = await snipe(kp, sellTx.tx, sale.jitoTip);
+            //remove sale from our arrays because it has been dealt with
+            if (signature !== undefined) {
+              removeSale(kp.publicKey.toString(), sale.token);
+              //TODO: Notify user when sale is made
+              const userId = getUserTelegramId(kp.publicKey.toString());
+              const message = `🏷️ NEW SALE:  ${balance / 1_000_000_000} $${poolInfo.ticker} for ${sellTx.earned / LAMPORTS_PER_SOL} SOL.`;
+              notifyTGUser(
+                userId,
+                message,
+                NotificationEvent.Sale,
+                sale.token.toString(),
+                sellTx.earned
+              );
+            }
           }
         }
       });
@@ -181,41 +186,49 @@ setInterval(async () => {
               false,
               TOKEN_PROGRAM_ID
             );
-            connection.getTokenAccountBalance(ata).then(async (rawBalance) => {
-              const balance = parseInt(rawBalance.value.amount);
-              const poolInfo = getPoolForMint(currentSale.toString());
-              const sellTx = await getSwapIx(
-                0,
-                kp,
-                balance,
-                true,
-                currentSale.toString(),
-                poolInfo.pool.toString(),
-                sniperSettings.slippage
-              );
-              if (sellTx) {
-                const signature = await snipe(
-                  kp,
-                  sellTx.tx,
-                  sniperSettings.jitoTip
-                );
-                //remove sale from our arrays because it has been dealt with
-                if (signature !== undefined) {
-                  const userId = getUserTelegramId(seller);
-                  const message = `🏷️ NEW SALE (${sell == 1 ? " 🤑 SL" : "🥴 TP"} HIT):  ${balance / 1_000_000_000} $${pool.ticker} for ${sellTx.earned / LAMPORTS_PER_SOL} SOL.`;
-                  notifyTGUser(
-                    userId,
-                    message,
-                    NotificationEvent.Sale,
+            const accountInfo = await connection.getAccountInfo(ata);
+            if (!accountInfo) {
+              // The account does NOT exist; handle accordingly
+              removeTPSLForUser(seller, currentSale);
+            } else {
+              connection
+                .getTokenAccountBalance(ata)
+                .then(async (rawBalance) => {
+                  const balance = parseInt(rawBalance.value.amount);
+                  const poolInfo = getPoolForMint(currentSale.toString());
+                  const sellTx = await getSwapIx(
+                    0,
+                    kp,
+                    balance,
+                    true,
                     currentSale.toString(),
-                    sellTx.earned
+                    poolInfo.pool.toString(),
+                    sniperSettings.slippage
                   );
-                  removeTPSLForUser(seller, currentSale);
-                }
-              }
-            });
+                  if (sellTx) {
+                    const signature = await snipe(
+                      kp,
+                      sellTx.tx,
+                      sniperSettings.jitoTip
+                    );
+                    //remove sale from our arrays because it has been dealt with
+                    if (signature !== undefined) {
+                      const userId = getUserTelegramId(seller);
+                      const message = `🏷️ NEW SALE (${sell == 1 ? " 🤑 SL" : "🥴 TP"} HIT):  ${balance / 1_000_000_000} $${pool.ticker} for ${sellTx.earned / LAMPORTS_PER_SOL} SOL.`;
+                      notifyTGUser(
+                        userId,
+                        message,
+                        NotificationEvent.Sale,
+                        currentSale.toString(),
+                        sellTx.earned
+                      );
+                      removeTPSLForUser(seller, currentSale);
+                    }
+                  }
+                });
+            }
           } catch (error) {
-            console.log("Error while attempting to sell for SL / TP Strategy")
+            console.log("Error while attempting to sell for SL / TP Strategy");
             console.log(error);
           }
         }

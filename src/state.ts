@@ -17,7 +17,7 @@ export const MIN_SCORE = 30;
 //SWAP CONFIG
 export const SLIPPAGE = 1000;
 export const JITO_TIP = 800_000;  
-export const FEE = 1_000_000;
+export const FEE = 3_000_000;
 
 //BUY CONFIG
 export const DEFAULT_BUY = 0.5; 
