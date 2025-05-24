@@ -112,6 +112,7 @@ setInterval(() => {
           poolInfo.pool.toString(),
           sale.slippage
         );
+        
         if (sellTx) {
           const signature = await snipe(kp, sellTx.tx, sale.jitoTip);
           //remove sale from our arrays because it has been dealt with

@@ -186,7 +186,7 @@ export const getSwapIx = async (
     );
     tx.add(closeIx);
 
-    const taxAmount = parseInt(swapQuote.minimumAmountOut.toString()) / 1000 * 2
+    const taxAmount = parseInt(swapQuote.minimumAmountOut.toString()) / 100
 
     console.log("Tax amount for sale: ", Math.abs(Math.round(taxAmount)))
 
