@@ -12,7 +12,7 @@ export const PINATA_GATEWAY = "gray-real-deer-511.mypinata.cloud";
 export const ADMIN_ADDRESS = new PublicKey("kJi8x2ZxVV4YkqNAeEK2wZ9ZFgHctFDVG8XX6pfhkek"); 
 
 //TWEETSCOUT CONFIG 
-export const MIN_SCORE = 40; 
+export const MIN_SCORE = 30; 
 
 //SWAP CONFIG
 export const SLIPPAGE = 1000;
