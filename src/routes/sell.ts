@@ -7,9 +7,9 @@ import {
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import { getSwapIx } from "../meteora/instructions/swap";
-import { getPoolForMint } from "../meteora/utils";
 import { snipe } from "../jito/snipe";
 import { getParamsForSniper } from "../watchers";
+import { getPoolForMint } from "../watchers";
 
 //TODO: Pass correct slippage from user settings or unwrap as 5000
 
@@ -58,7 +58,7 @@ export const sellTokensForKeypair = async (
     const balance = parseInt(rawBalance.value.amount);
     const mintSlot = 0;
 
-    const pool = await getPoolForMint(toSell.toString());
+    const pool = getPoolForMint(toSell.toString());
     if (!pool) {
       throw new Error("Pool for mint not found");
     }
