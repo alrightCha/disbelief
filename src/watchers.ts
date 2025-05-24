@@ -163,7 +163,7 @@ export const addSaleInXForSniper = (
     token: token,
   };
   const currentState = sales[user];
-  if (currentState !== undefined) {
+  if (currentState !== undefined && currentState !== null) {
     sales[user].push(saleInfo);
   } else {
     sales[user] = [saleInfo];

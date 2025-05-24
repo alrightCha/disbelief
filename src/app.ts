@@ -4,15 +4,12 @@ import express, { NextFunction, Request, Response } from "express";
 import { watchTokens } from "./routes/watch";
 import { Router } from "express";
 
-import {
-  BELIEVE_DEPLOYER,
-  WSS_RPC,
-  RPC_URL,
-} from "./state";
+import { BELIEVE_DEPLOYER, WSS_RPC, RPC_URL } from "./state";
 import {
   Connection,
   LogsFilter,
   Keypair,
+  LAMPORTS_PER_SOL,
 } from "@solana/web3.js";
 
 import {
@@ -44,28 +41,27 @@ app.use(express.json());
 
 const router = Router();
 
-
 function localhostOnly(req: Request, res: Response, next: NextFunction) {
-    // Handles both IPv4 and IPv6 localhost
-    const remoteAddress = req.socket.remoteAddress;
-    if (
-      remoteAddress === "127.0.0.1" ||
-      remoteAddress === "::1" ||
-      remoteAddress === "::ffff:127.0.0.1"
-    ) {
-      return next();
-    } else {
-      res.status(403).json({ error: "Forbidden: Localhost only" });
-    }
+  // Handles both IPv4 and IPv6 localhost
+  const remoteAddress = req.socket.remoteAddress;
+  if (
+    remoteAddress === "127.0.0.1" ||
+    remoteAddress === "::1" ||
+    remoteAddress === "::ffff:127.0.0.1"
+  ) {
+    return next();
+  } else {
+    res.status(403).json({ error: "Forbidden: Localhost only" });
   }
-  
-  // Apply to all endpoints in the router
-  router.use(localhostOnly);
+}
+
+// Apply to all endpoints in the router
+router.use(localhostOnly);
 
 router.post("/watch", watchTokens);
 router.post("/sell", sellTokensForKeypair);
 router.post("/stop", stopWatching);
-router.post("/price", getPriceForMint); 
+router.post("/price", getPriceForMint);
 
 app.use(router);
 
@@ -98,13 +94,13 @@ setInterval(() => {
         false,
         TOKEN_PROGRAM_ID
       );
-      
+
       connection.getTokenAccountBalance(ata).then(async (rawBalance) => {
         const balance = parseInt(rawBalance.value.amount);
         const poolInfo = getPoolForMint(sale.token.toString());
 
-        if(!poolInfo){
-            return 
+        if (!poolInfo) {
+          return;
         }
 
         const sellTx = await getSwapIx(
@@ -123,8 +119,14 @@ setInterval(() => {
             removeSale(kp.publicKey.toString(), sale.token);
             //TODO: Notify user when sale is made
             const userId = getUserTelegramId(kp.publicKey.toString());
-            const message = `🏷️ NEW SALE:  ${balance} $${poolInfo.ticker} for ${sellTx.earned} SOL.`;
-            notifyTGUser(userId, message, NotificationEvent.Sale, sale.token.toString(), sellTx.earned);
+            const message = `🏷️ NEW SALE:  ${balance / 1_000_000_000} $${poolInfo.ticker} for ${sellTx.earned / LAMPORTS_PER_SOL} SOL.`;
+            notifyTGUser(
+              userId,
+              message,
+              NotificationEvent.Sale,
+              sale.token.toString(),
+              sellTx.earned
+            );
           }
         }
       });
@@ -142,7 +144,13 @@ setInterval(async () => {
   for (let i = 0; i < sales.length; i++) {
     let seller = sales[i][0];
     const sniperSettings = getParamsForSniper(seller);
+    if (sniperSettings == undefined || sniperSettings == null) {
+      return;
+    }
     let sellerSales = sales[i][1];
+    if (sellerSales == undefined || sellerSales == null) {
+      return;
+    }
     for (let j = 0; j < sellerSales.length; j++) {
       const currentSale = sellerSales[j].token;
 
@@ -163,37 +171,52 @@ setInterval(async () => {
         }
 
         if (sell > 0) {
-          const secret = sniperSettings.keypair;
-          const kp = Keypair.fromSecretKey(bs58.decode(secret));
-          const ata = getAssociatedTokenAddressSync(
-            currentSale,
-            kp.publicKey,
-            false,
-            TOKEN_PROGRAM_ID
-          );
-          connection.getTokenAccountBalance(ata).then(async (rawBalance) => {
-            const balance = parseInt(rawBalance.value.amount);
-            const poolInfo = getPoolForMint(currentSale.toString());
-            const sellTx = await getSwapIx(
-              0,
-              kp,
-              balance,
-              true,
-              currentSale.toString(),
-              poolInfo.pool.toString(),
-              sniperSettings.slippage, 
+          try {
+            const secret = sniperSettings.keypair;
+            const kp = Keypair.fromSecretKey(bs58.decode(secret));
+            const ata = getAssociatedTokenAddressSync(
+              currentSale,
+              kp.publicKey,
+              false,
+              TOKEN_PROGRAM_ID
             );
-            if (sellTx) {
-              const signature = await snipe(kp, sellTx.tx, sniperSettings.jitoTip);
-              //remove sale from our arrays because it has been dealt with
-              if (signature !== undefined) {
-                const userId = getUserTelegramId(seller);
-                const message = `🏷️ NEW SALE (${sell == 1 ? " 🤑 SL" : "🥴 TP"} HIT):  ${balance} $${pool.ticker} for ${sellTx.earned} SOL.`;
-                notifyTGUser(userId, message, NotificationEvent.Sale, currentSale.toString(), sellTx.earned);
-                removeTPSLForUser(seller, currentSale)
+            connection.getTokenAccountBalance(ata).then(async (rawBalance) => {
+              const balance = parseInt(rawBalance.value.amount);
+              const poolInfo = getPoolForMint(currentSale.toString());
+              const sellTx = await getSwapIx(
+                0,
+                kp,
+                balance,
+                true,
+                currentSale.toString(),
+                poolInfo.pool.toString(),
+                sniperSettings.slippage
+              );
+              if (sellTx) {
+                const signature = await snipe(
+                  kp,
+                  sellTx.tx,
+                  sniperSettings.jitoTip
+                );
+                //remove sale from our arrays because it has been dealt with
+                if (signature !== undefined) {
+                  const userId = getUserTelegramId(seller);
+                  const message = `🏷️ NEW SALE (${sell == 1 ? " 🤑 SL" : "🥴 TP"} HIT):  ${balance / 1_000_000_000} $${pool.ticker} for ${sellTx.earned / LAMPORTS_PER_SOL} SOL.`;
+                  notifyTGUser(
+                    userId,
+                    message,
+                    NotificationEvent.Sale,
+                    currentSale.toString(),
+                    sellTx.earned
+                  );
+                  removeTPSLForUser(seller, currentSale);
+                }
               }
-            }
-          });
+            });
+          } catch (error) {
+            console.log("Error while attempting to sell for SL / TP Strategy")
+            console.log(error);
+          }
         }
       }
     }

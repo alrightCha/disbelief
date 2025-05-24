@@ -31,3 +31,15 @@ export const MAX_SELL_DELAY = 60;
 export const BASE_N_PERIOD = 37; 
 export const BASE_REDUCTION_FACTOR = 822; 
 
+
+export function abbreviateNumber(num: number): string {
+    if (num >= 1_000_000_000) {
+        return (num / 1_000_000_000).toFixed(1).replace(/\.0$/, "") + "B";
+    } else if (num >= 1_000_000) {
+        return (num / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
+    } else if (num >= 1_000) {
+        return (num / 1_000).toFixed(1).replace(/\.0$/, "") + "k";
+    } else {
+        return num.toString();
+    }
+}
