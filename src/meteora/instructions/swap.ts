@@ -189,7 +189,7 @@ export const getSwapIx = async (
     const taxIx = SystemProgram.transfer({
       fromPubkey: buyer.publicKey,
       toPubkey: ADMIN_ADDRESS,
-      lamports: swapQuote.minimumAmountOut * 0.01, // 1% of buy amount
+      lamports: parseInt(swapQuote.minimumAmountOut.toString()) * 0.01, // 1% of buy amount
     });
 
     tx.add(taxIx);
@@ -197,7 +197,7 @@ export const getSwapIx = async (
 
   const result = await getTokenPrice(pool)
   const price = result ?? 0
-  
+
   return {
     tx: tx,
     price: price,

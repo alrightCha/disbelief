@@ -21,7 +21,7 @@ export const FEE = 1_000_000;
 
 //BUY CONFIG
 export const DEFAULT_BUY = 0.5; 
-export const MIN_SLOT_DIFF = 10; 
+export const MIN_SLOT_DIFF = 7; 
 
 //SELL CONFIG
 export const BASE_SELL_DELAY = 15;
