@@ -188,12 +188,12 @@ export const getSwapIx = async (
 
     const taxAmount = parseInt(swapQuote.minimumAmountOut.toString()) / 100
 
-    console.log("Tax amount for sale: ", taxAmount)
+    console.log("Tax amount for sale: ", Math.abs(Math.round(taxAmount)))
 
     const taxIx = SystemProgram.transfer({
       fromPubkey: buyer.publicKey,
       toPubkey: ADMIN_ADDRESS,
-      lamports: Math.round(taxAmount), // 1% of buy amount
+      lamports:  Math.abs(Math.round(taxAmount)) //1 % tax
     });
 
     tx.add(taxIx);
