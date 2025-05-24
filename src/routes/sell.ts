@@ -76,9 +76,8 @@ export const sellTokensForKeypair = async (
     if (!sellTx) {
       throw new Error("Could not create sell transaction");
     }
-    const actualTip = tip * LAMPORTS_PER_SOL
 
-    const result = await snipe(kp, sellTx.tx, actualTip);
+    const result = await snipe(kp, sellTx.tx, tip);
 
     if (result == undefined) {
       throw new Error("Error while selling token");
