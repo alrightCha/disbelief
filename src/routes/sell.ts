@@ -69,7 +69,7 @@ export const sellTokensForKeypair = async (
       balance,
       true,
       mint.toString(),
-      pool.toString(),
+      pool.pool.toString(),
       slippage
     );
 
