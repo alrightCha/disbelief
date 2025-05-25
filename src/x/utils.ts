@@ -110,3 +110,37 @@ export async function getUserDetails(
     return { success: false, error: `Failed to fetch user details: ${error}` };
   }
 }
+
+export const getLatestReplyByBelieve = async (mintAddress: string) => {
+  const uid = "1914344855205289984";
+  const timeline = await twitterClient.v2.userTimeline(uid);
+  const tweets = timeline.data.data;
+
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+
+  for (const tweet of tweets) {
+    const linkMatch = tweet.text.match(urlRegex);
+    if (!linkMatch) continue;
+
+    const tcoUrl = linkMatch[0];
+
+    // Resolve the t.co URL to get the final destination (e.g. https://believe.app/coin/<mintAddress>)
+    try {
+      const response = await fetch(tcoUrl, { method: 'HEAD', redirect: 'follow' });
+      const finalUrl = response.url;
+
+      if (finalUrl.includes(`/coin/${mintAddress}`)) {
+        // Extract username without @ (first word after @ at the start)
+        const usernameMatch = tweet.text.match(/^@(\w+)/);
+        if (usernameMatch) {
+          return usernameMatch[1]; // username without '@'
+        }
+      }
+    } catch (e) {
+      // Ignore and continue to next
+      continue;
+    }
+  }
+
+  return null; // Not found
+};

@@ -18,7 +18,7 @@ import {
   usernameWatchedBy,
 } from "./watchers";
 import { NotificationEvent, notifyTGUser } from "./notify";
-import { getUserDetails } from "./x/utils";
+import { getLatestReplyByBelieve, getUserDetails } from "./x/utils";
 
 //TODO: Fetch every username being targeted by active wallets
 //If username found for wallets: go through wallets & snipe with each at the same time with several threads. Kill thread only when buy passes
@@ -54,40 +54,30 @@ export const onLogs: LogsCallback = async (logInfo, ctx) => {
 
       console.log("Fetching metadata for mint: ", mintInfo.mint);
       const startTweetPerformance = performance.now();
-      const tweetMetadata = await getTweetMetadataFromIpfs(
-        mintInfo.uri,
-        mintInfo.cid
-      );
+      const twitterUsername = await getLatestReplyByBelieve(mintInfo.mint.toString())
+
       const endPerf = performance.now() - startTweetPerformance;
       console.log(
         "FINDING TWEET METADATA IN PARALLEL TOOK: ",
         endPerf.toFixed(2)
       );
 
-      const username = tweetMetadata.tweetCreatorUsername;
-      const userId = tweetMetadata.tweetCreatorUserId;
-
-      const buyers = usernameWatchedBy(username);
-
-      let passesScout = false;
-      const twitterData = await getUserDetails(userId);
-      if (twitterData.data !== undefined && twitterData.data !== null) {
-        console.log("Twitter data: ", twitterData.data)
-        if (
-          twitterData.data.followerCount > 100 &&
-          twitterData.data.verificationStatus !== "none"
-        ) {
-          const score = await getTweetScoutScore(userId);
-          passesScout = score > MIN_SCORE;
-        }
+      if(twitterUsername == null){
+        console.log("COULD NOT FIND TWITTER USERNAME")
+        return 
       }
+
+      console.log("TWITTER USERNAME: @", twitterUsername); 
+      
+      const buyers = usernameWatchedBy(twitterUsername);
 
       if (buyers.length > 0) {
         buyers.map(async (buyerAddress: string) => {
           const buyerParams = getParamsForSniper(buyerAddress);
           const userIsUsingTweetScout = userIsUsingTweetscout(buyerAddress);
+          const score = await getTweetScoutScore(twitterUsername);
           //Escape early if user is using tweetscout and score is low
-          if (!passesScout && userIsUsingTweetScout) {
+          if (score < MIN_SCORE && userIsUsingTweetScout) {
             return;
           }
 
