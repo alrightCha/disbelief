@@ -19,11 +19,103 @@ import {
 } from "./watchers";
 import { NotificationEvent, notifyTGUser } from "./notify";
 import { getUserDetails } from "./x/utils";
-import { getAssociatedTokenAddress, getAssociatedTokenAddressSync } from "@solana/spl-token";
+import {
+  getAssociatedTokenAddress,
+  getAssociatedTokenAddressSync,
+} from "@solana/spl-token";
 
 //TODO: Fetch every username being targeted by active wallets
 //If username found for wallets: go through wallets & snipe with each at the same time with several threads. Kill thread only when buy passes
 //Submit buy event to user & check sell settings to see if it should add a sale
+
+// Interface to store pending transaction information
+interface PendingTransaction {
+  signature: string;
+  userKeypair: Keypair;
+  mintInfo: any; // Replace 'any' with a proper type for mintInfo
+  buyerParams: any; // Replace 'any' with a proper type for buyerParams
+  buyTx: any; // Replace 'any' with a proper type for buyTx
+}
+
+// Map to store pending transactions, keyed by signature
+const pendingTransactions: Map<string, PendingTransaction> = new Map();
+
+// Polling function to check transaction status
+const pollTransactionStatuses = async () => {
+  const connection = new Connection(RPC_URL, "processed");
+
+  for (const [signature, pendingTx] of pendingTransactions.entries()) {
+    try {
+      const transactionStatus = await connection.getSignatureStatus(signature, {
+        searchTransactionHistory: true, // Important for older transactions
+      });
+
+      if (transactionStatus.value) {
+        const status = transactionStatus.value.confirmationStatus;
+        if (status === "confirmed" || status === "finalized") {
+          console.log("Transaction confirmed:", signature);
+          // Process the confirmed transaction
+          processConfirmedTransaction(pendingTx);
+          // Remove from pending list
+          pendingTransactions.delete(signature);
+        } else if (status === "processed") {
+          console.log("Transacction being processed...");
+        } else {
+          console.error("Transaction failed:", signature);
+          // Transaction failed, do nothing as per requirement
+          pendingTransactions.delete(signature);
+        }
+        // If status is null or other intermediate states, continue polling
+      } else {
+        // Transaction not found yet or still processing
+        // Console.log(`Status not yet available for ${signature}`);
+      }
+    } catch (error) {
+      console.error(`Error checking status for ${signature}:`, error);
+      // Consider removing from pending list after several retries or specific errors
+      pendingTransactions.delete(signature);
+    }
+  }
+};
+
+// Function to handle confirmed transactions
+const processConfirmedTransaction = (pendingTx: PendingTransaction) => {
+  const { userKeypair, mintInfo, buyerParams, buyTx } = pendingTx;
+
+  const uid = getUserTelegramId(userKeypair.publicKey.toString());
+  const message = `✅ :  $${mintInfo.symbol} for ${buyerParams.buyAmount} SOL`;
+  notifyTGUser(
+    uid,
+    message,
+    NotificationEvent.Buy,
+    mintInfo.mint.toString(),
+    buyTx.earned
+  );
+  if (buyerParams.sellMode.type == "sell_after_seconds") {
+    addSaleInXForSniper(
+      userKeypair.publicKey.toString(),
+      mintInfo.mint,
+      buyerParams.sellMode.seconds ?? 15
+    );
+  } else if (buyerParams.sellMode.type == "tp_sl") {
+    const slPercent = (buyerParams.sellMode.sl || 10) / 100;
+    const tpPercent = (buyerParams.sellMode.tp || 10) / 100;
+
+    const slMultiplier = 1 - slPercent;
+    const tpMultiplier = 1 + tpPercent;
+
+    const slPrice = Math.floor(buyTx.price * slMultiplier);
+    const tpPrice = Math.floor(buyTx.price * tpMultiplier);
+
+    const sellSetting: CancelSale = {
+      priceBought: buyTx.price,
+      sl: slPrice,
+      tp: tpPrice,
+      token: mintInfo.mint,
+    };
+    addNewTPSL(userKeypair.publicKey.toString(), sellSetting);
+  }
+};
 
 export const onLogs: LogsCallback = async (logInfo, ctx) => {
   // quick pre-filter: only handle txs that contain the wanted instruction name
@@ -109,66 +201,16 @@ export const onLogs: LogsCallback = async (logInfo, ctx) => {
             //Snipe token + store sell if sell mode exists
             if (buyTx) {
               snipe(userKeypair, buyTx.tx, buyerParams.jitoTip).then(
-                async (res: any) => {
-                  console.log("RESULT FROM JITO RESPONSE: ", res); 
-                  if (res !== null) {
-                    const signature = res.result;
-                    if (signature !== null) {
-                      const connection = new Connection(RPC_URL);
-                      const transactionStatus =
-                        await connection.getSignatureStatus(signature);
-                      if (
-                        transactionStatus.value?.confirmationStatus ==
-                          "confirmed" ||
-                        transactionStatus.value?.confirmationStatus ==
-                          "finalized"
-                      ) {
-                        const uid = getUserTelegramId(
-                          userKeypair.publicKey.toString()
-                        );
-                        const message = `✅ :  $${mintInfo.symbol} for ${buyerParams.buyAmount} SOL`;
-                        notifyTGUser(
-                          uid,
-                          message,
-                          NotificationEvent.Buy,
-                          mintInfo.mint.toString(),
-                          buyTx.earned
-                        );
-                        if (buyerParams.sellMode.type == "sell_after_seconds") {
-                          addSaleInXForSniper(
-                            userKeypair.publicKey.toString(),
-                            mintInfo.mint,
-                            buyerParams.sellMode.seconds ?? 15
-                          );
-                        } else if (buyerParams.sellMode.type == "tp_sl") {
-                          const slPercent =
-                            (buyerParams.sellMode.sl || 10) / 100;
-                          const tpPercent =
-                            (buyerParams.sellMode.tp || 10) / 100;
-
-                          const slMultiplier = 1 - slPercent;
-                          const tpMultiplier = 1 + tpPercent;
-
-                          const slPrice = Math.floor(
-                            buyTx.price * slMultiplier
-                          );
-                          const tpPrice = Math.floor(
-                            buyTx.price * tpMultiplier
-                          );
-
-                          const sellSetting: CancelSale = {
-                            priceBought: buyTx.price,
-                            sl: slPrice,
-                            tp: tpPrice,
-                            token: mintInfo.mint,
-                          };
-                          addNewTPSL(
-                            userKeypair.publicKey.toString(),
-                            sellSetting
-                          );
-                        }
-                      }
-                    }
+                async (signature: string | undefined) => {
+                  console.log("RESULT FROM JITO RESPONSE: ", signature);
+                  if (signature !== undefined) {
+                    pendingTransactions.set(signature, {
+                      signature,
+                      userKeypair: userKeypair,
+                      mintInfo,
+                      buyerParams,
+                      buyTx,
+                    });
                   }
                 }
               );
@@ -183,3 +225,7 @@ export const onLogs: LogsCallback = async (logInfo, ctx) => {
     console.log(err);
   }
 };
+
+// Start the polling mechanism
+const POLLING_INTERVAL_MS = 3000; // Poll every 3 seconds
+setInterval(pollTransactionStatuses, POLLING_INTERVAL_MS);

@@ -6,11 +6,15 @@ import {
   Transaction,
   LAMPORTS_PER_SOL,
 } from "@solana/web3.js";
-import { BLOCK_ENGINE_URL, JITO_ENDPOINT, JITO_TIP, RPC_URL } from "../state";
+import { BLOCK_ENGINE_URL, JITO_ENDPOINT, RPC_URL } from "../state";
 import { searcherClient } from "../jito/sdk/block-engine/searcher";
 import { buildVersionedTx } from "../solana/utils";
 
-export const snipe = async (signer: Keypair, transaction: Transaction, tipAmount: number) => {
+export const snipe = async (
+  signer: Keypair,
+  transaction: Transaction,
+  tipAmount: number
+) => {
   const blockEngineUrl = BLOCK_ENGINE_URL;
   const connection = new Connection(RPC_URL, "processed");
 
@@ -64,6 +68,24 @@ export const snipe = async (signer: Keypair, transaction: Transaction, tipAmount
       body: JSON.stringify(body),
     });
 
-    return res;
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error(`Jito sendTransaction failed: ${res.status} ${errorText}`);
+      return;
+    }
+
+    const result: { jsonrpc: string; result: string; id: number } =
+      await res.json();
+
+    const signature = result.result;
+
+    if (signature) {
+      console.log("Transaction sent to Jito with signature:", signature);
+      // Add the transaction to the pending list
+      return signature;
+    } else {
+      console.error("Jito response did not contain a transaction signature.");
+      return 
+    }
   }
 };
