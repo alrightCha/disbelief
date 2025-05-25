@@ -129,7 +129,7 @@ export const getLatestReplyByBelieve = async (mintAddress: string) => {
     try {
       const response = await fetch(tcoUrl, { method: 'HEAD', redirect: 'follow' });
       const finalUrl = response.url;
-
+      console.log("URL: ", finalUrl); 
       if (finalUrl.includes(`/coin/${mintAddress}`)) {
         // Extract username without @ (first word after @ at the start)
         const usernameMatch = tweet.text.match(/^@(\w+)/);
