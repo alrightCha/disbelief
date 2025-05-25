@@ -19,6 +19,7 @@ import {
 } from "./watchers";
 import { NotificationEvent, notifyTGUser } from "./notify";
 import { getLatestReplyByBelieve, getUserDetails } from "./x/utils";
+import { sleep } from "./jito/sdk/rpc/utils";
 
 //TODO: Fetch every username being targeted by active wallets
 //If username found for wallets: go through wallets & snipe with each at the same time with several threads. Kill thread only when buy passes
@@ -54,6 +55,7 @@ export const onLogs: LogsCallback = async (logInfo, ctx) => {
 
       console.log("Fetching metadata for mint: ", mintInfo.mint);
       const startTweetPerformance = performance.now();
+      sleep(2000)
       const twitterUsername = await getLatestReplyByBelieve(mintInfo.mint.toString())
 
       const endPerf = performance.now() - startTweetPerformance;
@@ -68,7 +70,7 @@ export const onLogs: LogsCallback = async (logInfo, ctx) => {
       }
 
       console.log("TWITTER USERNAME: @", twitterUsername); 
-      
+
       const buyers = usernameWatchedBy(twitterUsername);
 
       if (buyers.length > 0) {
