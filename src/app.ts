@@ -4,7 +4,7 @@ import express, { NextFunction, Request, Response } from "express";
 import { watchTokens } from "./routes/watch";
 import { Router } from "express";
 
-import { BELIEVE_DEPLOYER, WSS_RPC, RPC_URL } from "./state";
+import { BELIEVE_DEPLOYER, WSS_RPC, RPC_URL, abbreviateNumber } from "./state";
 import {
   Connection,
   LogsFilter,
@@ -94,7 +94,7 @@ setInterval(() => {
         false,
         TOKEN_PROGRAM_ID
       );
-      
+
       const accountInfo = await connection.getAccountInfo(ata);
       if (!accountInfo) {
         // The account does NOT exist; handle accordingly
@@ -125,7 +125,8 @@ setInterval(() => {
               removeSale(kp.publicKey.toString(), sale.token);
               //TODO: Notify user when sale is made
               const userId = getUserTelegramId(kp.publicKey.toString());
-              const message = `🏷️ NEW SALE:  ${balance / 1_000_000_000} $${poolInfo.ticker} for ${sellTx.earned / LAMPORTS_PER_SOL} SOL.`;
+              const cleanBalance = abbreviateNumber(balance / 1_000_000_000)
+              const message = `🏷️ NEW SALE:  ${cleanBalance} $${poolInfo.ticker} for ${(sellTx.earned / LAMPORTS_PER_SOL).toFixed(3)} SOL.`;
               notifyTGUser(
                 userId,
                 message,
@@ -215,7 +216,8 @@ setInterval(async () => {
                     //remove sale from our arrays because it has been dealt with
                     if (signature !== undefined) {
                       const userId = getUserTelegramId(seller);
-                      const message = `🏷️ NEW SALE (${sell == 1 ? " 🤑 SL" : "🥴 TP"} HIT):  ${balance / 1_000_000_000} $${pool.ticker} for ${sellTx.earned / LAMPORTS_PER_SOL} SOL.`;
+                      const soldAmount = abbreviateNumber(balance / 1_000_000_000)
+                      const message = `🏷️ NEW SALE (${sell == 1 ? " 🤑 SL" : "🥴 TP"} HIT):  ${soldAmount} $${pool.ticker} for ${(sellTx.earned / LAMPORTS_PER_SOL).toFixed(3)} SOL.`;
                       notifyTGUser(
                         userId,
                         message,

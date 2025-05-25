@@ -1,4 +1,9 @@
-import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+import {
+  Connection,
+  Keypair,
+  LAMPORTS_PER_SOL,
+  PublicKey,
+} from "@solana/web3.js";
 import { Request, Response, NextFunction } from "express";
 import bs58 from "bs58";
 import { JITO_TIP, RPC_URL, SLIPPAGE } from "../state";
@@ -20,9 +25,9 @@ export const sellTokensForKeypair = async (
 ) => {
   try {
     const { keypair, mint, tip } = req.body;
-    console.log("beginning sell for token: ", mint)
-    console.log("With tip: ", tip)
-    console.log("For keypair: ", keypair); 
+    console.log("beginning sell for token: ", mint);
+    console.log("With tip: ", tip);
+    console.log("For keypair: ", keypair);
 
     if (!keypair) {
       throw new Error("Missing keypair");
@@ -35,16 +40,16 @@ export const sellTokensForKeypair = async (
     const connection = new Connection(RPC_URL);
     //Remove user from watching new tokens
     const kp = Keypair.fromSecretKey(bs58.decode(keypair));
-    console.log("Successfully converted kp. Pubkey: ", kp.publicKey.toString())
+    console.log("Successfully converted kp. Pubkey: ", kp.publicKey.toString());
 
     const toSell = new PublicKey(mint);
-    const settings = getParamsForSniper(kp.publicKey.toString())
-    console.log("Found settings for user: ", settings)
+    const settings = getParamsForSniper(kp.publicKey.toString());
+    console.log("Found settings for user: ", settings);
 
-    let slippage = SLIPPAGE
+    let slippage = SLIPPAGE;
 
-    if(settings != undefined || settings != null){
-      slippage = settings.slippage
+    if (settings != undefined || settings != null) {
+      slippage = settings.slippage;
     }
 
     const ata = getAssociatedTokenAddressSync(
@@ -53,7 +58,7 @@ export const sellTokensForKeypair = async (
       false,
       TOKEN_PROGRAM_ID
     );
-    console.log("Found ata: ", ata.toString())
+    console.log("Found ata: ", ata.toString());
     const rawBalance = await connection.getTokenAccountBalance(ata);
     const balance = parseInt(rawBalance.value.amount);
     const mintSlot = 0;
@@ -82,9 +87,13 @@ export const sellTokensForKeypair = async (
     if (result == undefined) {
       throw new Error("Error while selling token");
     } else {
-      res.status(200).send({ message: "Token sold successfully" });
+      res.status(200).send({
+        message: "Token sold successfully",
+        amount_sold: balance,
+        tx_hash: result,
+        earned: sellTx.earned
+      });
     }
-
   } catch (err: any) {
     console.log("Error: ", err);
     res.status(500).send({ error: err.toString() });

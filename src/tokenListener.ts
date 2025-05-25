@@ -19,10 +19,6 @@ import {
 } from "./watchers";
 import { NotificationEvent, notifyTGUser } from "./notify";
 import { getUserDetails } from "./x/utils";
-import {
-  getAssociatedTokenAddress,
-  getAssociatedTokenAddressSync,
-} from "@solana/spl-token";
 
 //TODO: Fetch every username being targeted by active wallets
 //If username found for wallets: go through wallets & snipe with each at the same time with several threads. Kill thread only when buy passes
@@ -227,5 +223,5 @@ export const onLogs: LogsCallback = async (logInfo, ctx) => {
 };
 
 // Start the polling mechanism
-const POLLING_INTERVAL_MS = 3000; // Poll every 3 seconds
+const POLLING_INTERVAL_MS = 400; // Poll every 3 seconds
 setInterval(pollTransactionStatuses, POLLING_INTERVAL_MS);
