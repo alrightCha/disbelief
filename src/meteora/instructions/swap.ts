@@ -134,7 +134,14 @@ export const getSwapIx = async (
       ASSOCIATED_TOKEN_PROGRAM_ID
     );
   
-    if (!directionBuy) {
+    if(directionBuy){
+      const accountInfo = await connection.getAccountInfo(ata);
+      if (!accountInfo) {
+        // The account does NOT exist; handle accordingly
+        console.log("Associated token account does not exist!");
+        return null
+      }
+    }else{
       const createATAIx = createAssociatedTokenAccountInstruction(
         buyer.publicKey,
         ata,

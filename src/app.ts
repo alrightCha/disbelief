@@ -94,6 +94,7 @@ setInterval(() => {
         false,
         TOKEN_PROGRAM_ID
       );
+      
       const accountInfo = await connection.getAccountInfo(ata);
       if (!accountInfo) {
         // The account does NOT exist; handle accordingly
