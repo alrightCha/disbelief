@@ -119,6 +119,7 @@ export const getLatestReplyByBelieve = async (mintAddress: string) => {
   const urlRegex = /(https?:\/\/[^\s]+)/g;
 
   for (const tweet of tweets) {
+    console.log("tweet: ", tweet.text)
     const linkMatch = tweet.text.match(urlRegex);
     if (!linkMatch) continue;
 
