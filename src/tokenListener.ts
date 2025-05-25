@@ -18,6 +18,7 @@ import {
   usernameWatchedBy,
 } from "./watchers";
 import { NotificationEvent, notifyTGUser } from "./notify";
+import { getUserDetails } from "./x/utils";
 
 //TODO: Fetch every username being targeted by active wallets
 //If username found for wallets: go through wallets & snipe with each at the same time with several threads. Kill thread only when buy passes
@@ -67,13 +68,25 @@ export const onLogs: LogsCallback = async (logInfo, ctx) => {
 
       const buyers = usernameWatchedBy(username);
 
+      const twitterData = await getUserDetails(userId);
+      let passesScout = false;
+      if (twitterData.data !== undefined && twitterData.data !== null) {
+        console.log("Twitter data: ", twitterData.data)
+        if (
+          twitterData.data.followerCount > 100 &&
+          twitterData.data.verificationStatus !== "none"
+        ) {
+          const score = await getTweetScoutScore(userId);
+          passesScout = score > MIN_SCORE;
+        }
+      }
+
       if (buyers.length > 0) {
-        const score = await getTweetScoutScore(userId);
         buyers.map(async (buyerAddress: string) => {
           const buyerParams = getParamsForSniper(buyerAddress);
           const userIsUsingTweetScout = userIsUsingTweetscout(buyerAddress);
           //Escape early if user is using tweetscout and score is low
-          if (score < MIN_SCORE && userIsUsingTweetScout) {
+          if (!passesScout && userIsUsingTweetScout) {
             return;
           }
 
@@ -88,15 +101,21 @@ export const onLogs: LogsCallback = async (logInfo, ctx) => {
             false,
             mintInfo.mint.toString(),
             mintInfo.pool.toString(),
-            buyerParams.slippage, 
+            buyerParams.slippage
           );
 
           //Snipe token + store sell if sell mode exists
           if (buyTx) {
             snipe(userKeypair, buyTx.tx, buyerParams.jitoTip);
-            const uid = getUserTelegramId(userKeypair.publicKey.toString()); 
-            const message = `✅ :  $${mintInfo.symbol} for ${buyerParams.buyAmount} SOL`
-            notifyTGUser(uid, message, NotificationEvent.Buy, mintInfo.mint.toString(), buyTx.earned); 
+            const uid = getUserTelegramId(userKeypair.publicKey.toString());
+            const message = `✅ :  $${mintInfo.symbol} for ${buyerParams.buyAmount} SOL`;
+            notifyTGUser(
+              uid,
+              message,
+              NotificationEvent.Buy,
+              mintInfo.mint.toString(),
+              buyTx.earned
+            );
             if (buyerParams.sellMode.type == "sell_after_seconds") {
               addSaleInXForSniper(
                 userKeypair.publicKey.toString(),
