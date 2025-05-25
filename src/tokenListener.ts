@@ -55,7 +55,7 @@ export const onLogs: LogsCallback = async (logInfo, ctx) => {
 
       console.log("Fetching metadata for mint: ", mintInfo.mint);
       const startTweetPerformance = performance.now();
-      sleep(5000)
+      await sleep(2000)
       const twitterUsername = await getLatestReplyByBelieve(mintInfo.mint.toString())
 
       const endPerf = performance.now() - startTweetPerformance;
