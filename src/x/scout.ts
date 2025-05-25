@@ -14,7 +14,7 @@ export async function getTweetScoutScore(userId: string): Promise<number> {
   dotenv.config();
   const apiKey = process.env.TWITTER_SCOUT_API_KEY || "";
 
-  const url = `https://api.tweetscout.io/v2/score/${userId}`;
+  const url = `https://api.tweetscout.io/v2/score-id/${userId}`;
 
   const res = await fetch(url, {
     method: "GET",
