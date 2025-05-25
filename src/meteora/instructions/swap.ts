@@ -43,19 +43,6 @@ export const getSwapIx = async (
     const connection = new Connection(RPC_URL, "processed");
   
     //Ensure that sniper doesn't snipe instantly and lose a lot of funds due to being too early
-    if (!directionBuy) {
-      while (true) {
-        const currentSlot = await connection.getSlot();
-        const currentDiff = currentSlot - mintSlot;
-        console.log("CUrrent diff in slot: ", currentDiff);
-        if (currentDiff >= MIN_SLOT_DIFF) {
-          break;
-        } else {
-          sleep(200);
-        }
-      }
-    }
-  
     const client = new DynamicBondingCurveClient(connection, "processed");
   
     const inAmount: BN = new BN(amountIn.toString()); //Passing number as string for safe BN
