@@ -73,11 +73,11 @@ export async function getTweetMetadataFromIpfs(
   const fleekPath = ipfsFleek(cid);
   const thirdPath = ipfsThirdweb(cid);
 
-  const prefix = "http://127.0.0.1:8080/ipfs"
-  const endpoint = `${prefix}/${cid}`
+  const prefix = "http://127.0.0.1:8080/ipfs";
+  const endpoint = `${prefix}/${cid}`;
 
   const gateways = [
-    endpoint, 
+    endpoint,
     uri,
     everlandPath,
     classicPath,
@@ -91,8 +91,8 @@ export async function getTweetMetadataFromIpfs(
   ];
 
   return firstSuccessful(
-    gateways.map((url) => async () => {
-      const res = await fetch(url);
+    gateways.map((url) => async (signal: AbortSignal) => {
+      const res = await fetch(url, { signal });
       if (!res.ok)
         throw new Error(
           `IPFS fetch failed: ${res.status} ${res.statusText} for ${url}`

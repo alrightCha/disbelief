@@ -44,19 +44,24 @@ class AggregateError extends Error {
 }
 
 export async function firstSuccessful<T>(
-  promises: (() => Promise<T>)[]
+  promiseFactories: ((signal: AbortSignal) => Promise<T>)[]
 ): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    let errors: any[] = [];
-    let rejectedCount = 0;
+  const controller = new AbortController();
+  const signal = controller.signal;
+  let errors: any[] = new Array(promiseFactories.length);
+  let rejectedCount = 0;
 
-    promises.forEach((fn, i) => {
-      fn()
-        .then(resolve)
-        .catch((err) => {
-          errors[i] = err;
+  return new Promise<T>((resolve, reject) => {
+    promiseFactories.forEach((factory, index) => {
+      factory(signal)
+        .then(result => {
+          controller.abort(); // Cancel all other requests
+          resolve(result);
+        })
+        .catch(err => {
+          errors[index] = err;
           rejectedCount++;
-          if (rejectedCount === promises.length) {
+          if (rejectedCount === promiseFactories.length) {
             reject(new AggregateError(errors, "All gateways failed"));
           }
         });

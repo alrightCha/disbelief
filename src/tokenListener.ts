@@ -51,6 +51,7 @@ export const onLogs: LogsCallback = async (logInfo, ctx) => {
         console.log("Breaking early. This is a test token.");
         return;
       }
+
       console.log("Fetching metadata for mint: ", mintInfo.mint);
       const startTweetPerformance = performance.now();
       const tweetMetadata = await getTweetMetadataFromIpfs(
@@ -68,8 +69,8 @@ export const onLogs: LogsCallback = async (logInfo, ctx) => {
 
       const buyers = usernameWatchedBy(username);
 
-      const twitterData = await getUserDetails(userId);
       let passesScout = false;
+      const twitterData = await getUserDetails(userId);
       if (twitterData.data !== undefined && twitterData.data !== null) {
         console.log("Twitter data: ", twitterData.data)
         if (
