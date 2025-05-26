@@ -83,8 +83,3 @@ export async function getTweetMetadataFromIpfs(
     throw e;
   }
 }
-
-getTweetMetadataFromIpfs(
-  "https://",
-  "bafkreie36kfmkwdwteqijlewm6sozyvihfalfac5msvzgx6rc6mst3ksca"
-);
