@@ -63,44 +63,28 @@ export async function getTweetMetadataFromIpfs(
   uri: string,
   cid: string
 ): Promise<TweetMetadata> {
-  const everlandPath = everland(cid);
-  const dwebPath = dweb(cid);
-  const classicPath = basicIpfs(cid);
-  const pinataPath = pinataIpfs(cid);
-  const infuraPath = infura(cid);
-  const nftStoragePath = nftStorage(cid);
-  const web3Path = web3Storage(cid);
-  const fleekPath = ipfsFleek(cid);
-  const thirdPath = ipfsThirdweb(cid);
-
   const prefix = "http://127.0.0.1:8080/ipfs";
   const endpoint = `${prefix}/${cid}`;
+  const start = Date.now();
 
-  const gateways = [
-    endpoint,
-    uri,
-    everlandPath,
-    classicPath,
-    dwebPath,
-    pinataPath,
-    infuraPath,
-    nftStoragePath,
-    web3Path,
-    fleekPath,
-    thirdPath,
-  ];
-
-  return firstSuccessful(
-    gateways.map((url) => async (signal: AbortSignal) => {
-      const res = await fetch(url, { signal });
-      if (!res.ok)
-        throw new Error(
-          `IPFS fetch failed: ${res.status} ${res.statusText} for ${url}`
-        );
-      const json: PeekJson = await res.json();
-      const { tweetId, tweetCreatorUserId, tweetCreatorUsername } =
-        json.metadata;
-      return { tweetId, tweetCreatorUserId, tweetCreatorUsername };
-    })
-  );
+  try {
+    const res = await fetch(endpoint);
+    const elapsed = Date.now() - start;
+    console.log(`[IPFS FETCH] took ${elapsed}ms`);
+    if (!res.ok)
+      throw new Error(
+        `IPFS fetch failed: ${res.status} ${res.statusText}  (after ${elapsed}ms)`
+      );
+    const json: PeekJson = await res.json();
+    const { tweetId, tweetCreatorUserId, tweetCreatorUsername } = json.metadata;
+    return { tweetId, tweetCreatorUserId, tweetCreatorUsername };
+  } catch (e) {
+    const elapsed = Date.now() - start;
+    throw e;
+  }
 }
+
+getTweetMetadataFromIpfs(
+  "https://",
+  "bafkreie36kfmkwdwteqijlewm6sozyvihfalfac5msvzgx6rc6mst3ksca"
+);
