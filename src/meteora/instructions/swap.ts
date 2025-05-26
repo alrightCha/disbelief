@@ -14,7 +14,6 @@ import {
   BASE_N_PERIOD,
   BASE_REDUCTION_FACTOR,
   FEE,
-  MIN_SLOT_DIFF,
   RPC_URL,
 } from "../../state";
 import { BN } from "@coral-xyz/anchor";
@@ -45,8 +44,6 @@ export const getSwapIx = async (
     const client = new DynamicBondingCurveClient(connection, "processed");
   
     const inAmount: BN = new BN(amountIn.toString()); //Passing number as string for safe BN
-  
-    console.log("In amount: ", inAmount);
   
     const tx = new Transaction();
   
@@ -180,12 +177,9 @@ export const getSwapIx = async (
       tx.add(taxIx);
     }
   
-    const result = await getTokenPrice(pool);
-    const price = result ?? 0;
-  
     return {
       tx: tx,
-      price: price,
+      price: 0,
       earned: swapQuote.minimumAmountOut.toString(),
     };
   } catch(error){
@@ -223,3 +217,19 @@ export const getTokenPrice = async (pool: PublicKey) => {
     return null;
   }
 };
+
+const test = async () => {
+  const now = performance.now(); 
+
+  const mint = "Dcd7qpuXTVXtWjZ1HVmj7GDHTqqbGgunN3QhF7jWTUD5"
+  const pool = "AzQLRZM2QbBw1xmKmgXjaQow3GiUReYiiaf2SSUTmvUq"
+  const buyer = Keypair.generate(); 
+
+  const swap = await getSwapIx(buyer, 1 * LAMPORTS_PER_SOL, false, mint, pool, 500); 
+
+  const then = performance.now() - now; 
+
+  console.log("Time taken; ", then)
+}
+
+test(); 

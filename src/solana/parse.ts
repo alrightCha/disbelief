@@ -10,7 +10,7 @@ interface TxData {
   name: string;
   symbol: string;
   uri: string;
-  cid: string; 
+  cid: string;
   mint: PublicKey;
   pool: PublicKey;
 }
