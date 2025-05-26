@@ -115,7 +115,6 @@ const processConfirmedTransaction = (pendingTx: PendingTransaction) => {
 
 export const onLogs: LogsCallback = async (logInfo, ctx) => {
   // quick pre-filter: only handle txs that contain the wanted instruction name
-  const mintSlot = ctx.slot;
   const wanted = logInfo.logs.find((l) =>
     l.includes("InitializeVirtualPoolWithSplToken")
   );
@@ -127,7 +126,6 @@ export const onLogs: LogsCallback = async (logInfo, ctx) => {
   try {
     const mintInfo = await getTxDetails(txSignature);
     //setting pool for mint to retrieve faster next
-    setPoolForMint(mintInfo.mint.toString(), mintInfo.pool, mintInfo.symbol);
     console.log("Found following mint info from Signature: ", mintInfo);
     if (mintInfo) {
       const name = mintInfo.name;
@@ -161,6 +159,7 @@ export const onLogs: LogsCallback = async (logInfo, ctx) => {
           twitterData.data.verificationStatus !== "none"
         ) {
           const score = await getTweetScoutScore(userId);
+          console.log("SCORE: ", score); 
           passesScout = score > MIN_SCORE;
         }
 
@@ -180,7 +179,6 @@ export const onLogs: LogsCallback = async (logInfo, ctx) => {
             );
 
             const buyTx = await getSwapIx(
-              mintSlot,
               userKeypair,
               buyerParams.buyAmount * LAMPORTS_PER_SOL,
               false,
@@ -203,6 +201,7 @@ export const onLogs: LogsCallback = async (logInfo, ctx) => {
                       buyTx,
                     });
                   }
+                  setPoolForMint(mintInfo.mint.toString(), mintInfo.pool, mintInfo.symbol);
                 }
               );
             }

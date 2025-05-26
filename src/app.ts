@@ -109,7 +109,6 @@ setInterval(() => {
           removeSale(kp.publicKey.toString(), sale.token);
         } else {
           const sellTx = await getSwapIx(
-            0,
             kp,
             balance,
             true,
@@ -199,7 +198,6 @@ setInterval(async () => {
                   const balance = parseInt(rawBalance.value.amount);
                   const poolInfo = getPoolForMint(currentSale.toString());
                   const sellTx = await getSwapIx(
-                    0,
                     kp,
                     balance,
                     true,

@@ -30,7 +30,6 @@ import { sleep } from "../../jito/sdk/rpc/utils";
 
 
 export const getSwapIx = async (
-  mintSlot: number,
   buyer: Keypair,
   amountIn: number,
   directionBuy: boolean,
@@ -59,21 +58,15 @@ export const getSwapIx = async (
   
     const mintPubkey = new PublicKey(mintAddress);
     const pool = new PublicKey(poolAddress);
-    console.log("POOL: ", pool);
     let virtualPoolState = null;
-  
-    const ipfsStart = performance.now();
+
     while (virtualPoolState == null) {
       const receivedState = await client.state.getPool(pool);
       if (receivedState != null) {
         virtualPoolState = receivedState;
-        if (!directionBuy) {
-          console.log("Migration progress: ", receivedState.migrationProgress);
-          const pooledTokens = receivedState.baseReserve.toString();
-          console.log("Pooled tokens: ", pooledTokens);
-        }
+        console.log("Migration progress: ", receivedState.migrationProgress);
       } else {
-        sleep(500);
+        await sleep(200);
       }
     }
   
@@ -86,9 +79,6 @@ export const getSwapIx = async (
       poolConfigState.poolFees.baseFee.reductionFactor.toString()
     );
   
-    console.log("Number of period that should be 37: ", numberOfPeriod);
-    console.log("Reduction factor that should be 822 or more: ", reductionFactor);
-  
     const snipe: boolean =
       numberOfPeriod <= BASE_N_PERIOD && reductionFactor >= BASE_REDUCTION_FACTOR;
   
@@ -99,7 +89,6 @@ export const getSwapIx = async (
   
     const currentBlockTimestamp = await connection.getSlot();
   
-    console.log("SNIPE SLOT: ", currentBlockTimestamp);
     /**
      * Calculate the amount out for a swap (quote)
      * @param virtualPool - The virtual pool
@@ -121,10 +110,6 @@ export const getSwapIx = async (
       hasReferral: false,
       currentPoint: new BN(currentBlockTimestamp),
     });
-  
-    const totalMs = performance.now() - ipfsStart;
-  
-    console.log("TOTAL to find config from meteora: ", totalMs.toFixed(2));
   
     const ata = await getAssociatedTokenAddress(
       mintPubkey,

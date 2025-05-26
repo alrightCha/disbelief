@@ -15,77 +15,70 @@ export const snipe = async (
   transaction: Transaction,
   tipAmount: number
 ) => {
-  const blockEngineUrl = BLOCK_ENGINE_URL;
   const connection = new Connection(RPC_URL, "processed");
 
-  const c = searcherClient(blockEngineUrl);
+  const tipAccount = new PublicKey(
+    "ADuUkR4vqLUMWXxW9gh6D6L8pMSawimctcNZ5pGwDcEt"
+  );
 
-  const tip = await c.getTipAccounts();
+  const tipIx = SystemProgram.transfer({
+    fromPubkey: signer.publicKey,
+    toPubkey: tipAccount,
+    lamports: tipAmount * LAMPORTS_PER_SOL,
+  });
 
-  if (tip.ok) {
-    const account = tip.value[0];
-    const tipAccount = new PublicKey(account);
-    console.log(account);
+  transaction.add(tipIx);
 
-    const tipIx = SystemProgram.transfer({
-      fromPubkey: signer.publicKey,
-      toPubkey: tipAccount,
-      lamports: tipAmount * LAMPORTS_PER_SOL,
-    });
+  const { blockhash } = await connection.getLatestBlockhash();
 
-    transaction.add(tipIx);
+  const versionedTx = await buildVersionedTx(
+    signer.publicKey,
+    [signer],
+    transaction,
+    blockhash
+  );
 
-    const { blockhash } = await connection.getLatestBlockhash();
+  const encoding = "base64";
+  const encodedTx = Buffer.from(versionedTx.serialize()).toString(encoding);
+  const endpoint = JITO_ENDPOINT;
 
-    const versionedTx = await buildVersionedTx(
-      signer.publicKey,
-      [signer],
-      transaction,
-      blockhash
-    );
-
-    const encoding = "base64";
-    const encodedTx = Buffer.from(versionedTx.serialize()).toString(encoding);
-    const endpoint = JITO_ENDPOINT;
-
-    const body = {
-      jsonrpc: "2.0",
-      id: 1,
-      method: "sendTransaction",
-      params: [
-        encodedTx,
-        {
-          encoding: encoding,
-        },
-      ],
-    };
-
-    const res = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
+  const body = {
+    jsonrpc: "2.0",
+    id: 1,
+    method: "sendTransaction",
+    params: [
+      encodedTx,
+      {
+        encoding: encoding,
       },
-      body: JSON.stringify(body),
-    });
+    ],
+  };
 
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error(`Jito sendTransaction failed: ${res.status} ${errorText}`);
-      return;
-    }
+  const res = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
 
-    const result: { jsonrpc: string; result: string; id: number } =
-      await res.json();
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error(`Jito sendTransaction failed: ${res.status} ${errorText}`);
+    return;
+  }
 
-    const signature = result.result;
+  const result: { jsonrpc: string; result: string; id: number } =
+    await res.json();
 
-    if (signature) {
-      console.log("Transaction sent to Jito with signature:", signature);
-      // Add the transaction to the pending list
-      return signature;
-    } else {
-      console.error("Jito response did not contain a transaction signature.");
-      return 
-    }
+  const signature = result.result;
+
+  if (signature) {
+    console.log("Transaction sent to Jito with signature:", signature);
+    // Add the transaction to the pending list
+    return signature;
+  } else {
+    console.error("Jito response did not contain a transaction signature.");
+    return;
   }
 };
