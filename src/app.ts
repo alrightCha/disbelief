@@ -65,7 +65,7 @@ router.post("/price", getPriceForMint);
 
 app.use(router);
 
-const connection = new Connection(RPC_URL, { wsEndpoint: WSS_RPC });
+const connection = new Connection(RPC_URL, { wsEndpoint: WSS_RPC, commitment: "processed" });
 const filter: LogsFilter = BELIEVE_DEPLOYER;
 
 (async () => {
