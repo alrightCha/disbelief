@@ -6,8 +6,7 @@ import {
   Transaction,
   LAMPORTS_PER_SOL,
 } from "@solana/web3.js";
-import { BLOCK_ENGINE_URL, JITO_ENDPOINT, RPC_URL } from "../state";
-import { searcherClient } from "../jito/sdk/block-engine/searcher";
+import { JITO_ENDPOINT, RPC_URL } from "../state";
 import { buildVersionedTx } from "../solana/utils";
 
 export const snipe = async (

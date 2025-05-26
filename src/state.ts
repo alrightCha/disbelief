@@ -7,7 +7,7 @@ export const BUNDLE_LIMIT = 5;
 export const BELIEVE_DEPLOYER = new PublicKey("5qWya6UjwWnGVhdSBL3hyZ7B45jbk6Byt1hwd7ohEGXE"); 
 export const METAPLEX_PUBKEY = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"); 
 export const METEORA_DBC = new PublicKey("dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN"); 
-export const JITO_ENDPOINT = "https://mainnet.block-engine.jito.wtf/api/v1/transactions"; 
+export const JITO_ENDPOINT = "https://ny.mainnet.block-engine.jito.wtf/api/v1/transactions"; 
 export const PINATA_GATEWAY = "gray-real-deer-511.mypinata.cloud";
 export const ADMIN_ADDRESS = new PublicKey("kJi8x2ZxVV4YkqNAeEK2wZ9ZFgHctFDVG8XX6pfhkek"); 
 
