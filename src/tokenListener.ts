@@ -121,7 +121,6 @@ export const onLogs: LogsCallback = async (logInfo, ctx) => {
   );
   if (!wanted) return; // ignore the rest
 
-  console.log("MINT SLOT: ", mintSlot);
   console.log("👻  New token created with TX Signature:", logInfo.signature);
 
   let txSignature = logInfo.signature;
@@ -137,11 +136,9 @@ export const onLogs: LogsCallback = async (logInfo, ctx) => {
         name.trim().toLowerCase() == "test" ||
         symbol.trim().toLowerCase() == "test"
       ) {
-        console.log("Breaking early. This is a test token.");
         return;
       }
 
-      console.log("Fetching metadata for mint: ", mintInfo.mint);
       const startTweetPerformance = performance.now();
       const tweetMetadata = await getTweetMetadataFromIpfs(
         mintInfo.uri,
@@ -166,8 +163,6 @@ export const onLogs: LogsCallback = async (logInfo, ctx) => {
           const score = await getTweetScoutScore(userId);
           passesScout = score > MIN_SCORE;
         }
-
-        console.log("TWITTER USERNAME: @", tweetMetadata.tweetCreatorUsername);
 
         const buyers = usernameWatchedBy(tweetMetadata.tweetCreatorUsername);
 

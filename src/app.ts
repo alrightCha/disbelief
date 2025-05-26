@@ -72,7 +72,7 @@ const filter: LogsFilter = BELIEVE_DEPLOYER;
   const subId = connection.onLogs(
     filter, // WS filter :contentReference[oaicite:1]{index=1}
     onLogs,
-    "confirmed"
+    "processed"
   );
 
   console.log("🔌  websocket ready – subscription id:", subId);
