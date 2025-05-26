@@ -61,7 +61,6 @@ export const sellTokensForKeypair = async (
     console.log("Found ata: ", ata.toString());
     const rawBalance = await connection.getTokenAccountBalance(ata);
     const balance = parseInt(rawBalance.value.amount);
-    const mintSlot = 0;
 
     const pool = getPoolForMint(toSell.toString());
     if (!pool) {
@@ -69,7 +68,6 @@ export const sellTokensForKeypair = async (
     }
 
     const sellTx = await getSwapIx(
-      mintSlot,
       kp,
       balance,
       true,
